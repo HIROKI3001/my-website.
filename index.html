@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=5.0,
+user-scalable=yes">
+
+<title>Professional Stream Stopwatch</title>
+
+<style>
+
+html,
+body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:transparent;
+    overflow:hidden;
+    touch-action:none;
+}
+
+#timer{
+
+    position:fixed;
+
+    top:20px;
+    left:50%;
+
+    transform:
+        translateX(-50%)
+        scale(1);
+
+    color:white;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-weight:900;
+
+    font-size:90px;
+
+    line-height:1;
+
+    white-space:nowrap;
+
+    text-shadow:
+        0 0 4px #000,
+        0 0 8px #000,
+        0 0 12px #000,
+        0 0 16px #000;
+
+    user-select:none;
+    -webkit-user-select:none;
+
+    cursor:pointer;
+
+    transform-origin:center center;
+
+}
+
+</style>
+</head>
+<body>
+
+<div id="timer">
+00:00:00
+</div>
+
+<script>
+
+const STORAGE_KEY =
+"PRO_STREAM_STOPWATCH";
+
+const timer =
+document.getElementById("timer");
+
+let running=false;
+
+let accumulated=0;
+
+let startPerf=0;
+
+let scale=1;
+
+let posX=window.innerWidth/2;
+let posY=20;
+
+function saveState(){
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+
+            running,
+            accumulated,
+
+            startPerf,
+
+            wallClock:
+                Date.now(),
+
+            scale,
+            posX,
+            posY
+
+        })
+    );
+}
+
+function loadState(){
+
+    const data=
+    localStorage.getItem(
+        STORAGE_KEY
+    );
+
+    if(!data) return;
+
+    try{
+
+        const s=
+        JSON.parse(data);
+
+        scale=s.scale || 1;
+
+        posX=s.posX ||
+        window.innerWidth/2;
+
+        posY=s.posY || 20;
+
+        accumulated=
+        s.accumulated || 0;
+
+        running=
+        s.running || false;
+
+        if(running){
+
+            const delta=
+            Date.now() -
+            s.wallClock;
+
+            accumulated += delta;
+
+            startPerf=
+            performance.now();
+        }
+
+    }catch(e){}
+}
+
+function elapsed(){
+
+    if(running){
+
+        return accumulated +
+        (
+            performance.now()
+            -
+            startPerf
+        );
+    }
+
+    return accumulated;
+}
+
+function format(ms){
+
+    const totalSeconds=
+    Math.floor(ms/1000);
+
+    const h=
+    Math.floor(
+        totalSeconds/3600
+    );
+
+    const m=
+    Math.floor(
+        (totalSeconds%3600)/60
+    );
+
+    const s=
+    totalSeconds%60;
+
+    return (
+        String(h)
+        .padStart(2,"0")
+        + ":" +
+        String(m)
+        .padStart(2,"0")
+        + ":" +
+        String(s)
+        .padStart(2,"0")
+    );
+}
+
+function updateView(){
+
+    timer.textContent=
+    format(elapsed());
+
+    timer.style.left=
+    posX+"px";
+
+    timer.style.top=
+    posY+"px";
+
+    timer.style.transform=
+    `translateX(-50%) scale(${scale})`;
+
+    requestAnimationFrame(
+        updateView
+    );
+}
+
+function startStop(){
+
+    if(!running){
+
+        startPerf=
+        performance.now();
+
+        running=true;
+
+    }else{
+
+        accumulated=
+        elapsed();
+
+        running=false;
+    }
+
+    saveState();
+}
+
+function reset(){
+
+    running=false;
+
+    accumulated=0;
+
+    saveState();
+}
+
+loadState();
+
+updateView();
+
+
+
+let tapTimeout;
+
+timer.addEventListener(
+"click",
+()=>{
+
+    clearTimeout(
+        tapTimeout
+    );
+
+    tapTimeout=
+    setTimeout(()=>{
+
+        startStop();
+
+    },250);
+
+});
+
+timer.addEventListener(
+"dblclick",
+()=>{
+
+    clearTimeout(
+        tapTimeout
+    );
+
+    reset();
+
+});
+
+
+
+let drag=false;
+
+let startX=0;
+let startY=0;
+
+timer.addEventListener(
+"pointerdown",
+(e)=>{
+
+    drag=true;
+
+    startX=
+    e.clientX-posX;
+
+    startY=
+    e.clientY-posY;
+
+});
+
+document.addEventListener(
+"pointermove",
+(e)=>{
+
+    if(!drag) return;
+
+    posX=
+    e.clientX-startX;
+
+    posY=
+    e.clientY-startY;
+
+});
+
+document.addEventListener(
+"pointerup",
+()=>{
+
+    drag=false;
+
+    saveState();
+
+});
+
+
+
+let pinchStart=null;
+let scaleStart=1;
+
+function dist(t1,t2){
+
+    return Math.hypot(
+
+        t2.clientX
+        -
+        t1.clientX,
+
+        t2.clientY
+        -
+        t1.clientY
+
+    );
+}
+
+document.addEventListener(
+"touchstart",
+(e)=>{
+
+    if(
+        e.touches.length===2
+    ){
+
+        pinchStart=
+        dist(
+            e.touches[0],
+            e.touches[1]
+        );
+
+        scaleStart=
+        scale;
+    }
+
+},
+{passive:false});
+
+document.addEventListener(
+"touchmove",
+(e)=>{
+
+    if(
+        e.touches.length===2 &&
+        pinchStart
+    ){
+
+        const d=
+        dist(
+            e.touches[0],
+            e.touches[1]
+        );
+
+        scale=
+        scaleStart*
+        (d/pinchStart);
+
+        scale=
+        Math.max(
+            0.3,
+            Math.min(
+                scale,
+                8
+            )
+        );
+    }
+
+},
+{passive:false});
+
+document.addEventListener(
+"touchend",
+()=>{
+
+    pinchStart=null;
+
+    saveState();
+
+});
+
+
+
+setInterval(
+saveState,
+1000
+);
+
+window.addEventListener(
+"beforeunload",
+saveState
+);
+
+</script>
+
+</body>
+</html>

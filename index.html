@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>FIFA World Cup Style Soccer Timer</title>
+    <title>High-Performance Soccer Timer</title>
     <style>
         :root {
-            --bg-color: rgba(17, 17, 17, 0.8); /* #111111CC */
+            --bg-color: rgba(17, 17, 17, 0.8);
             --border-color: #ffffff;
             --text-color: #ffffff;
-            --accent-color: #f3a913; /* ワールドカップをイメージしたゴールド */
+            --accent-color: #f3a913;
         }
 
         body {
@@ -24,43 +24,47 @@
             -webkit-user-select: none;
         }
 
-        /* タイマーコンテナ（ドラッグ＆ピンチ対象） */
+        /* [最適化] GPUレイヤーを強制生成し、描画を高速化 */
         #timer-container {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 0;
+            left: 0;
             display: inline-flex;
             align-items: center;
-            background: linear-gradient(135deg, #111111 0%, #2a2a2a 50%, #111111 100%); /* メタリック調放送局風 */
+            background: linear-gradient(135deg, #111111 0%, #2a2a2a 50%, #111111 100%);
             background-color: var(--bg-color);
             border: 2px solid var(--border-color);
             border-radius: 12px;
             padding: 10px 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.2);
-            transform-origin: top left;
-            transform: translate3d(0px, 0px, 0) scale(1);
+            
+            /* スケール変更の基点を左上に固定 */
+            transform-origin: 0 0; 
+            /* GPUレンダリングを有効化し、will-changeでブラウザに変更を事前通知 */
+            transform: translate3d(20px, 20px, 0) scale(1);
+            will-change: transform;
+            
             cursor: move;
-            touch-action: none; /* ブラウザ標準のスクロールやピンチを無効化 */
+            touch-action: none;
         }
 
-        /* サッカーボールアイコン */
+        /* [最適化] 回転アニメーションもGPUで行う */
         .icon {
             font-size: 1.2em;
             margin-right: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: spin 20s linear infinite paused;
+            will-change: transform;
         }
         .running .icon {
-            animation-play-state: running;
+            animation: spin 15s linear infinite;
         }
 
         @keyframes spin {
             100% { transform: rotate(360deg); }
         }
 
-        /* ステータス（前半/後半/PK） */
         #status-display {
             color: var(--accent-color);
             font-size: 1.2em;
@@ -69,7 +73,6 @@
             text-shadow: 0 0 4px rgba(243,169,19,0.6);
         }
 
-        /* 時間表示 */
         #time-display {
             color: var(--text-color);
             font-size: 1.5em;
@@ -77,19 +80,17 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* コントロールパネル */
         #control-panel {
             position: absolute;
             top: calc(100% + 10px);
             left: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             border: 1px solid #444;
             border-radius: 8px;
             padding: 8px;
             display: flex;
             gap: 6px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            transition: opacity 0.2s ease;
             z-index: 10000;
         }
 
@@ -97,22 +98,22 @@
             display: none !important;
         }
 
-        /* 操作ボタン */
         button {
             font-family: sans-serif;
             font-weight: bold;
             font-size: 12px;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             color: white;
             background: #333;
-            transition: background 0.1s;
+            /* タップ時の反応を速くするためtransitionは最小限に */
+            transition: background 0.05s; 
         }
 
         button:active {
-            transform: scale(0.95);
+            background: #555;
         }
 
         #btn-start { background-color: #27ae60; }
@@ -137,25 +138,24 @@
         </div>
         
         <div id="status-display">前半</div>
-        
         <div id="time-display">00:00:00</div>
 
         <div id="control-panel" class="hidden">
             <button id="btn-start">スタート</button>
             <button id="btn-stop">ストップ</button>
             <button id="btn-reset">リセット</button>
-            <button class="btn-period" onclick="setPeriod('前半')">前半</button>
-            <button class="btn-period" onclick="setPeriod('後半')">後半</button>
-            <button class="btn-period" onclick="setPeriod('PK')">PK</button>
+            <button class="btn-period" data-period="前半">前半</button>
+            <button class="btn-period" data-period="後半">後半</button>
+            <button class="btn-period" data-period="PK">PK</button>
         </div>
     </div>
 
     <script>
-        // --- 状態管理オブジェクト ---
+        // --- 状態管理 ---
         const state = {
             isRunning: false,
-            startTime: 0,      // 最後にスタートした「ブラウザ基準の現在時刻(ms)」
-            elapsedTime: 0,    // それまでに蓄積された経過時間(ms)
+            startTime: 0,
+            elapsedTime: 0,
             period: '前半',
             posX: 20,
             posY: 20,
@@ -167,37 +167,32 @@
         const statusDisplay = document.getElementById('status-display');
         const controlPanel = document.getElementById('control-panel');
 
-        // --- 高精度タイマーコアロジック ---
         let animationFrameId = null;
 
+        // [最適化] パフォーマンスカウンターによる超軽量時間計算
         function updateTimer() {
             if (!state.isRunning) return;
 
-            // デバイスの不可に左右されない高精度なパフォーマンスカウンターから逆算
-            const now = performance.now();
-            const totalElapsed = state.elapsedTime + (now - state.startTime);
+            const totalElapsed = state.elapsedTime + (performance.now() - state.startTime);
             
-            displayTime(totalElapsed);
+            // 整数演算のみで処理を高速化
+            const totalSeconds = (totalElapsed / 1000) | 0; 
+            const hrs = (totalSeconds / 3600) | 0;
+            const mins = ((totalSeconds % 3600) / 60) | 0;
+            const secs = totalSeconds % 60;
+
+            // DOMへの書き込みを最小限に（文字列生成の最適化）
+            timeDisplay.textContent = 
+                (hrs < 10 ? '0' + hrs : hrs) + ':' +
+                (mins < 10 ? '0' + mins : mins) + ':' +
+                (secs < 10 ? '0' + secs : secs);
+
             animationFrameId = requestAnimationFrame(updateTimer);
         }
 
-        function displayTime(ms) {
-            const totalSeconds = Math.floor(ms / 1000);
-            const hrs = Math.floor(totalSeconds / 3600);
-            const mins = Math.floor((totalSeconds % 3600) / 60);
-            const secs = totalSeconds % 60;
-
-            timeDisplay.textContent = 
-                String(hrs).padStart(2, '0') + ':' +
-                String(mins).padStart(2, '0') + ':' +
-                String(secs).padStart(2, '0');
-        }
-
-        // --- 操作系関数 ---
         function startTimer() {
             if (state.isRunning) return;
             state.isRunning = true;
-            // スタートした瞬間の高精度時間をデバイス内から取得
             state.startTime = performance.now();
             container.classList.add('running');
             updateTimer();
@@ -207,9 +202,8 @@
         function stopTimer() {
             if (!state.isRunning) return;
             state.isRunning = false;
-            // 止めた瞬間の経過時間を蓄積
             state.elapsedTime += (performance.now() - state.startTime);
-            cancelAnimationFrame(animationFrameId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
             container.classList.remove('running');
             saveState();
         }
@@ -218,9 +212,9 @@
             state.isRunning = false;
             state.elapsedTime = 0;
             state.startTime = 0;
-            cancelAnimationFrame(animationFrameId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
             container.classList.remove('running');
-            displayTime(0);
+            timeDisplay.textContent = "00:00:00";
             saveState();
         }
 
@@ -230,23 +224,24 @@
             saveState();
         }
 
-        // --- LocalStorageによる状態永続化・配信再接続対策 ---
+        // --- LocalStorage保存 (処理を軽量化するため非同期風に扱う) ---
         function saveState() {
-            const data = {
-                isRunning: state.isRunning,
-                elapsedTime: state.elapsedTime,
-                // 稼働中の場合は再接続時のズレを防ぐため、絶対時間(Unix Epoch Time)を記録
-                savedAt: Date.now(),
-                period: state.period,
-                posX: state.posX,
-                posY: state.posY,
-                scale: state.scale
-            };
-            localStorage.setItem('soccer_timer_state', JSON.stringify(data));
+            setTimeout(() => {
+                const data = {
+                    isRunning: state.isRunning,
+                    elapsedTime: state.elapsedTime,
+                    savedAt: Date.now(),
+                    period: state.period,
+                    posX: state.posX,
+                    posY: state.posY,
+                    scale: state.scale
+                };
+                localStorage.setItem('soccer_timer_state_v2', JSON.stringify(data));
+            }, 0);
         }
 
         function loadState() {
-            const saved = localStorage.getItem('soccer_timer_state');
+            const saved = localStorage.getItem('soccer_timer_state_v2');
             if (!saved) return;
             try {
                 const data = JSON.parse(saved);
@@ -259,7 +254,6 @@
                 applyTransform();
 
                 if (data.isRunning) {
-                    // 配信が落ちていた時間（ギャップ）を計算して補正
                     const gap = Date.now() - data.savedAt;
                     state.elapsedTime = data.elapsedTime + gap;
                     state.isRunning = true;
@@ -268,104 +262,23 @@
                     updateTimer();
                 } else {
                     state.elapsedTime = data.elapsedTime || 0;
-                    displayTime(state.elapsedTime);
+                    const totalSeconds = (state.elapsedTime / 1000) | 0;
+                    const hrs = (totalSeconds / 3600) | 0;
+                    const mins = ((totalSeconds % 3600) / 60) | 0;
+                    const secs = totalSeconds % 60;
+                    timeDisplay.textContent = 
+                        (hrs < 10 ? '0' + hrs : hrs) + ':' +
+                        (mins < 10 ? '0' + mins : mins) + ':' +
+                        (secs < 10 ? '0' + secs : secs);
                 }
             } catch (e) {
-                console.error("State load error", e);
+                console.error(e);
             }
         }
 
-        // --- ボタンイベントアタッチ ---
+        // --- イベント関連の最適化 ---
         document.getElementById('btn-start').addEventListener('click', (e) => { e.stopPropagation(); startTimer(); });
         document.getElementById('btn-stop').addEventListener('click', (e) => { e.stopPropagation(); stopTimer(); });
         document.getElementById('btn-reset').addEventListener('click', (e) => { e.stopPropagation(); resetTimer(); });
-
-        // タイマー部分のシングルタップでコントロールパネルの表示/非表示を切り替え
-        let touchStartTime = 0;
-        container.addEventListener('pointerdown', (e) => {
-            touchStartTime = Date.now();
-        });
-
-        container.addEventListener('pointerup', (e) => {
-            // ドラッグやピンチ操作と誤認しないよう、短いタップ(200ms未満)のみに反応
-            if (Date.now() - touchStartTime < 200 && !isPinched && !isDragging) {
-                controlPanel.classList.toggle('hidden');
-            }
-        });
-
-
-        // --- ドラッグ移動 ＆ ピンチイン・アウト（マルチタッチ）の実装 ---
-        let evCache = [];
-        let prevDiff = -1;
-        let isDragging = false;
-        let isPinched = false;
-        let startX, startY;
-
-        function applyTransform() {
-            container.style.transform = `translate3d(${state.posX}px, ${state.posY}px, 0) scale(${state.scale})`;
-        }
-
-        container.addEventListener('pointerdown', (e) => {
-            evCache.push(e);
-            if (evCache.length === 1) {
-                // シングルタッチ時：ドラッグ準備
-                isDragging = true;
-                // スケール変更による座標ズレを考慮したポインタの原点取得
-                startX = e.clientX - state.posX;
-                startY = e.clientY - state.posY;
-            }
-        });
-
-        container.addEventListener('pointermove', (e) => {
-            // キャッシュされたイベントの更新
-            const index = evCache.findIndex((ev) => ev.pointerId === e.pointerId);
-            if (index > -1) evCache[index] = e;
-
-            // ピンチズーム処理 (2本の指がタッチされている場合)
-            if (evCache.length === 2) {
-                isDragging = false;
-                isPinched = true;
-                
-                // 2点間の現在の距離を計算
-                const curDiff = Math.hypot(evCache[0].clientX - evCache[1].clientX, evCache[0].clientY - evCache[1].clientY);
-
-                if (prevDiff > 0) {
-                    // 変化量に応じてスケールを変更（感度調整: 0.005）
-                    const delta = (curDiff - prevDiff) * 0.005;
-                    state.scale = Math.max(0.5, Math.min(state.scale + delta, 3.0)); // 最小0.5倍〜最大3倍限制限
-                    applyTransform();
-                }
-                prevDiff = curDiff;
-            } 
-            // ドラッグ移動処理 (1本の指で移動中かつピンチ中でない場合)
-            else if (evCache.length === 1 && isDragging) {
-                state.posX = e.clientX - startX;
-                state.posY = e.clientY - startY;
-                applyTransform();
-            }
-        });
-
-        function handlePointerUp(e) {
-            const index = evCache.findIndex((ev) => ev.pointerId === e.pointerId);
-            if (index > -1) evCache.splice(index, 1);
-            
-            if (evCache.length < 2) {
-                prevDiff = -1;
-                if (evCache.length === 0) {
-                    if (isDragging || isPinched) saveState();
-                    isDragging = false;
-                    setTimeout(() => isPinched = false, 100); // 判定リセットに僅かなバッファ
-                }
-            }
-        }
-
-        container.addEventListener('pointerup', handlePointerUp);
-        container.addEventListener('pointercancel', handlePointerUp);
-        container.addEventListener('pointerout', handlePointerUp);
-        container.addEventListener('pointerleave', handlePointerUp);
-
-        // 起動時に状態を復元
-        window.addEventListener('DOMContentLoaded', loadState);
-    </script>
-</body>
-</html>
+        
+        document.querySelectorAll

@@ -1,284 +1,496 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>High-Performance Soccer Timer</title>
-    <style>
-        :root {
-            --bg-color: rgba(17, 17, 17, 0.8);
-            --border-color: #ffffff;
-            --text-color: #ffffff;
-            --accent-color: #f3a913;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background-color: transparent;
-            font-family: 'Arial Black', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+<title>Soccer Match Timer</title>
 
-        /* [最適化] GPUレイヤーを強制生成し、描画を高速化 */
-        #timer-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            display: inline-flex;
-            align-items: center;
-            background: linear-gradient(135deg, #111111 0%, #2a2a2a 50%, #111111 100%);
-            background-color: var(--bg-color);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.2);
-            
-            /* スケール変更の基点を左上に固定 */
-            transform-origin: 0 0; 
-            /* GPUレンダリングを有効化し、will-changeでブラウザに変更を事前通知 */
-            transform: translate3d(20px, 20px, 0) scale(1);
-            will-change: transform;
-            
-            cursor: move;
-            touch-action: none;
-        }
+<style>
 
-        /* [最適化] 回転アニメーションもGPUで行う */
-        .icon {
-            font-size: 1.2em;
-            margin-right: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            will-change: transform;
-        }
-        .running .icon {
-            animation: spin 15s linear infinite;
-        }
+body{
+    margin:0;
+    background:transparent;
+    overflow:hidden;
+    font-family:"Arial Black",sans-serif;
+}
 
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
+#timerBox{
 
-        #status-display {
-            color: var(--accent-color);
-            font-size: 1.2em;
-            margin-right: 15px;
-            letter-spacing: 1px;
-            text-shadow: 0 0 4px rgba(243,169,19,0.6);
-        }
+    position:absolute;
 
-        #time-display {
-            color: var(--text-color);
-            font-size: 1.5em;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
+    background:#111111CC;
 
-        #control-panel {
-            position: absolute;
-            top: calc(100% + 10px);
-            left: 0;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 8px;
-            display: flex;
-            gap: 6px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 10000;
-        }
+    border:2px solid #fff;
+    border-radius:12px;
 
-        .hidden {
-            display: none !important;
-        }
+    color:#fff;
 
-        button {
-            font-family: sans-serif;
-            font-weight: bold;
-            font-size: 12px;
-            padding: 8px 14px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            background: #333;
-            /* タップ時の反応を速くするためtransitionは最小限に */
-            transition: background 0.05s; 
-        }
+    padding:12px 18px;
 
-        button:active {
-            background: #555;
-        }
+    display:flex;
+    align-items:center;
+    gap:12px;
 
-        #btn-start { background-color: #27ae60; }
-        #btn-stop { background-color: #c0392b; }
-        #btn-reset { background-color: #7f8c8d; }
-        .btn-period { background-color: #2980b9; }
-    </style>
+    user-select:none;
+    touch-action:none;
+
+    transform-origin:center center;
+
+    box-shadow:
+    0 0 6px rgba(255,255,255,.15);
+
+    will-change:transform;
+}
+
+#ball{
+    font-size:30px;
+}
+
+#period{
+
+    font-size:28px;
+    min-width:60px;
+
+    text-align:center;
+
+    color:#FFD700;
+
+    text-shadow:
+    0 0 4px rgba(255,215,0,.5);
+}
+
+#time{
+
+    font-size:42px;
+
+    letter-spacing:2px;
+
+    text-shadow:
+    0 0 3px rgba(255,255,255,.3);
+}
+
+#controls{
+
+    position:absolute;
+
+    top:100%;
+    left:0;
+
+    margin-top:10px;
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:6px;
+}
+
+button{
+
+    background:#1f1f1f;
+
+    color:white;
+
+    border:1px solid white;
+
+    border-radius:8px;
+
+    padding:8px 12px;
+
+    font-weight:bold;
+}
+
+button:active{
+    transform:scale(.95);
+}
+
+.hidden{
+    display:none !important;
+}
+
+</style>
+
 </head>
 <body>
 
-    <div id="timer-container">
-        <div class="icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="11" fill="#fff" stroke="#000" stroke-width="1"/>
-                <path d="M12 2L14.5 6.5H9.5L12 2Z" fill="#000"/>
-                <path d="M12 22L14.5 17.5H9.5L12 22Z" fill="#000"/>
-                <path d="M2 12L6.5 9.5V14.5L2 12Z" fill="#000"/>
-                <path d="M22 12L17.5 9.5V14.5L22 12Z" fill="#000"/>
-                <polygon points="12,9 14.5,11 13.5,14 10.5,14 9.5,11" fill="#000"/>
-                <path d="M9.5 6.5L10.5 9M14.5 6.5L13.5 9M6.5 9.5L9.5 11M6.5 14.5L10.5 14M22 9.5L14.5 11M17.5 14.5L13.5 14M9.5 17.5L10.5 14M14.5 17.5L13.5 14" stroke="#000" stroke-width="1"/>
-            </svg>
-        </div>
-        
-        <div id="status-display">前半</div>
-        <div id="time-display">00:00:00</div>
+<div id="timerBox">
 
-        <div id="control-panel" class="hidden">
-            <button id="btn-start">スタート</button>
-            <button id="btn-stop">ストップ</button>
-            <button id="btn-reset">リセット</button>
-            <button class="btn-period" data-period="前半">前半</button>
-            <button class="btn-period" data-period="後半">後半</button>
-            <button class="btn-period" data-period="PK">PK</button>
-        </div>
-    </div>
+```
+<div id="ball">⚽</div>
 
-    <script>
-        // --- 状態管理 ---
-        const state = {
-            isRunning: false,
-            startTime: 0,
-            elapsedTime: 0,
-            period: '前半',
-            posX: 20,
-            posY: 20,
-            scale: 1
-        };
+<div id="period">前半</div>
 
-        const container = document.getElementById('timer-container');
-        const timeDisplay = document.getElementById('time-display');
-        const statusDisplay = document.getElementById('status-display');
-        const controlPanel = document.getElementById('control-panel');
+<div id="time">00:00:00</div>
 
-        let animationFrameId = null;
+<div id="controls">
 
-        // [最適化] パフォーマンスカウンターによる超軽量時間計算
-        function updateTimer() {
-            if (!state.isRunning) return;
+    <button id="startBtn">START</button>
+    <button id="stopBtn">STOP</button>
+    <button id="resetBtn">RESET</button>
 
-            const totalElapsed = state.elapsedTime + (performance.now() - state.startTime);
-            
-            // 整数演算のみで処理を高速化
-            const totalSeconds = (totalElapsed / 1000) | 0; 
-            const hrs = (totalSeconds / 3600) | 0;
-            const mins = ((totalSeconds % 3600) / 60) | 0;
-            const secs = totalSeconds % 60;
+    <button onclick="setPeriod('前半')">前半</button>
+    <button onclick="setPeriod('後半')">後半</button>
+    <button onclick="setPeriod('PK')">PK</button>
 
-            // DOMへの書き込みを最小限に（文字列生成の最適化）
-            timeDisplay.textContent = 
-                (hrs < 10 ? '0' + hrs : hrs) + ':' +
-                (mins < 10 ? '0' + mins : mins) + ':' +
-                (secs < 10 ? '0' + secs : secs);
+</div>
+```
 
-            animationFrameId = requestAnimationFrame(updateTimer);
-        }
+</div>
 
-        function startTimer() {
-            if (state.isRunning) return;
-            state.isRunning = true;
-            state.startTime = performance.now();
-            container.classList.add('running');
-            updateTimer();
-            saveState();
-        }
+<script>
 
-        function stopTimer() {
-            if (!state.isRunning) return;
-            state.isRunning = false;
-            state.elapsedTime += (performance.now() - state.startTime);
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            container.classList.remove('running');
-            saveState();
-        }
+const STORAGE_KEY="soccerTimerData";
 
-        function resetTimer() {
-            state.isRunning = false;
-            state.elapsedTime = 0;
-            state.startTime = 0;
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            container.classList.remove('running');
-            timeDisplay.textContent = "00:00:00";
-            saveState();
-        }
+const timerBox=document.getElementById("timerBox");
+const timerEl=document.getElementById("time");
+const periodEl=document.getElementById("period");
+const controls=document.getElementById("controls");
 
-        function setPeriod(p) {
-            state.period = p;
-            statusDisplay.textContent = p;
-            saveState();
-        }
+let running=false;
+let elapsed=0;
+let startPerf=0;
 
-        // --- LocalStorage保存 (処理を軽量化するため非同期風に扱う) ---
-        function saveState() {
-            setTimeout(() => {
-                const data = {
-                    isRunning: state.isRunning,
-                    elapsedTime: state.elapsedTime,
-                    savedAt: Date.now(),
-                    period: state.period,
-                    posX: state.posX,
-                    posY: state.posY,
-                    scale: state.scale
-                };
-                localStorage.setItem('soccer_timer_state_v2', JSON.stringify(data));
-            }, 0);
-        }
+let period="前半";
 
-        function loadState() {
-            const saved = localStorage.getItem('soccer_timer_state_v2');
-            if (!saved) return;
-            try {
-                const data = JSON.parse(saved);
-                state.period = data.period || '前半';
-                statusDisplay.textContent = state.period;
-                
-                state.posX = data.posX ?? 20;
-                state.posY = data.posY ?? 20;
-                state.scale = data.scale ?? 1;
-                applyTransform();
+let scale=1;
 
-                if (data.isRunning) {
-                    const gap = Date.now() - data.savedAt;
-                    state.elapsedTime = data.elapsedTime + gap;
-                    state.isRunning = true;
-                    state.startTime = performance.now();
-                    container.classList.add('running');
-                    updateTimer();
-                } else {
-                    state.elapsedTime = data.elapsedTime || 0;
-                    const totalSeconds = (state.elapsedTime / 1000) | 0;
-                    const hrs = (totalSeconds / 3600) | 0;
-                    const mins = ((totalSeconds % 3600) / 60) | 0;
-                    const secs = totalSeconds % 60;
-                    timeDisplay.textContent = 
-                        (hrs < 10 ? '0' + hrs : hrs) + ':' +
-                        (mins < 10 ? '0' + mins : mins) + ':' +
-                        (secs < 10 ? '0' + secs : secs);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
+let posX=100;
+let posY=100;
 
-        // --- イベント関連の最適化 ---
-        document.getElementById('btn-start').addEventListener('click', (e) => { e.stopPropagation(); startTimer(); });
-        document.getElementById('btn-stop').addEventListener('click', (e) => { e.stopPropagation(); stopTimer(); });
-        document.getElementById('btn-reset').addEventListener('click', (e) => { e.stopPropagation(); resetTimer(); });
-        
-        document.querySelectorAll
+let lastDisplay="";
+
+function applyTransform(){
+
+    timerBox.style.transform=
+    `translate3d(${posX}px,${posY}px,0) scale(${scale})`;
+}
+
+function currentElapsed(){
+
+    if(!running) return elapsed;
+
+    return elapsed+
+    (performance.now()-startPerf);
+}
+
+function saveState(){
+
+    localStorage.setItem(
+        STORAGE_KEY,
+
+        JSON.stringify({
+
+            running,
+
+            elapsed:
+            currentElapsed(),
+
+            wallClock:
+            Date.now(),
+
+            period,
+
+            scale,
+
+            posX,
+            posY
+        })
+    );
+}
+
+function loadState(){
+
+    const data=
+    JSON.parse(
+        localStorage.getItem(STORAGE_KEY)||"null"
+    );
+
+    if(!data) {
+
+        applyTransform();
+
+        return;
+    }
+
+    elapsed=data.elapsed||0;
+
+    period=data.period||"前半";
+
+    scale=data.scale||1;
+
+    posX=data.posX||100;
+
+    posY=data.posY||100;
+
+    if(data.running){
+
+        elapsed+=
+        Date.now()-data.wallClock;
+
+        startPerf=
+        performance.now();
+
+        running=true;
+    }
+
+    applyTransform();
+
+    updateDisplay();
+}
+
+function setPeriod(v){
+
+    period=v;
+
+    updateDisplay();
+
+    saveState();
+}
+
+function updateDisplay(){
+
+    const ms=
+    currentElapsed();
+
+    let sec=
+    Math.floor(ms/1000);
+
+    let h=
+    Math.floor(sec/3600);
+
+    sec%=3600;
+
+    let m=
+    Math.floor(sec/60);
+
+    let s=
+    sec%60;
+
+    const text=
+
+    String(h).padStart(2,"0")
+    +":"
+    +String(m).padStart(2,"0")
+    +":"
+    +String(s).padStart(2,"0");
+
+    if(text!==lastDisplay){
+
+        lastDisplay=text;
+
+        timerEl.textContent=text;
+    }
+
+    periodEl.textContent=period;
+}
+
+document
+.getElementById("startBtn")
+.onclick=()=>{
+
+    if(running) return;
+
+    startPerf=
+    performance.now();
+
+    running=true;
+
+    saveState();
+};
+
+document
+.getElementById("stopBtn")
+.onclick=()=>{
+
+    if(!running) return;
+
+    elapsed=
+    currentElapsed();
+
+    running=false;
+
+    saveState();
+
+    updateDisplay();
+};
+
+document
+.getElementById("resetBtn")
+.onclick=()=>{
+
+    running=false;
+
+    elapsed=0;
+
+    updateDisplay();
+
+    saveState();
+};
+
+setInterval(
+updateDisplay,
+1000
+);
+
+let dragging=false;
+
+let dragOffsetX=0;
+let dragOffsetY=0;
+
+timerBox.addEventListener(
+
+"pointerdown",
+
+e=>{
+
+    if(e.target.tagName==="BUTTON")
+        return;
+
+    dragging=true;
+
+    dragOffsetX=
+    e.clientX-posX;
+
+    dragOffsetY=
+    e.clientY-posY;
+});
+
+window.addEventListener(
+
+"pointermove",
+
+e=>{
+
+    if(!dragging)
+        return;
+
+    posX=
+    e.clientX-dragOffsetX;
+
+    posY=
+    e.clientY-dragOffsetY;
+
+    applyTransform();
+
+},
+
+{passive:true}
+);
+
+window.addEventListener(
+
+"pointerup",
+
+()=>{
+
+    if(!dragging)
+        return;
+
+    dragging=false;
+
+    saveState();
+});
+
+let pinchStart=0;
+let baseScale=1;
+
+timerBox.addEventListener(
+
+"touchstart",
+
+e=>{
+
+    if(e.touches.length!==2)
+        return;
+
+    pinchStart=
+    Math.hypot(
+
+        e.touches[0].clientX-
+        e.touches[1].clientX,
+
+        e.touches[0].clientY-
+        e.touches[1].clientY
+    );
+
+    baseScale=scale;
+},
+
+{passive:true}
+);
+
+timerBox.addEventListener(
+
+"touchmove",
+
+e=>{
+
+    if(e.touches.length!==2)
+        return;
+
+    e.preventDefault();
+
+    const dist=
+    Math.hypot(
+
+        e.touches[0].clientX-
+        e.touches[1].clientX,
+
+        e.touches[0].clientY-
+        e.touches[1].clientY
+    );
+
+    scale=
+
+    Math.max(
+        0.5,
+
+        Math.min(
+            4,
+
+            baseScale*
+            (dist/pinchStart)
+        )
+    );
+
+    applyTransform();
+
+},
+
+{passive:false}
+);
+
+timerBox.addEventListener(
+
+"touchend",
+
+()=>{
+
+    saveState();
+});
+
+timerBox.addEventListener(
+
+"click",
+
+e=>{
+
+    if(
+        e.target.tagName==="BUTTON"
+    ) return;
+
+    controls.classList.toggle(
+        "hidden"
+    );
+});
+
+loadState();
+
+updateDisplay();
+
+</script>
+
+</body>
+</html>

@@ -2,431 +2,422 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<meta name="viewport"
-content="width=device-width,
-initial-scale=1.0,
-maximum-scale=5.0,
-user-scalable=yes">
-
-<title>Professional Stream Stopwatch</title>
+<title>Soccer Match Timer</title>
 
 <style>
 
-html,
 body{
     margin:0;
-    padding:0;
-    width:100%;
-    height:100%;
     background:transparent;
     overflow:hidden;
-    touch-action:none;
+    font-family:"Arial Black",sans-serif;
 }
 
-#timer{
+#timerBox{
 
-    position:fixed;
-    top:20px;
-    left:50%;
+    position:absolute;
+    top:100px;
+    left:100px;
 
-    transform:translateX(-50%);
+    background:#111111CC;
 
-    padding:10px 24px;
+    border:2px solid white;
+    border-radius:12px;
 
-    color:#ffffff;
+    color:white;
 
-    font-family:
-        "Arial Black",
-        sans-serif;
+    padding:12px 18px;
 
-    font-size:58px;
-    font-weight:900;
+    display:flex;
+    align-items:center;
+    gap:12px;
 
-    border-radius:10px;
-
-    border:2px solid
-        rgba(255,255,255,0.9);
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(25,35,60,0.95),
-            rgba(8,12,20,0.95)
-        );
-
-    box-shadow:
-        0 0 0 1px rgba(255,215,0,.3),
-        0 6px 18px rgba(0,0,0,.6);
-
-    text-shadow:
-        0 2px 4px rgba(0,0,0,.8);
-
-    letter-spacing:2px;
+    cursor:move;
 
     user-select:none;
+    touch-action:none;
+
+    transform-origin:center center;
+
+    box-shadow:
+    0 0 10px rgba(255,255,255,.25),
+    inset 0 0 12px rgba(255,255,255,.18);
+
+    backdrop-filter:blur(3px);
+}
+
+#ball{
+    font-size:30px;
+}
+
+#period{
+
+    font-size:28px;
+    min-width:60px;
+    text-align:center;
+
+    color:#FFD700;
+
+    text-shadow:
+    0 0 8px rgba(255,215,0,.8);
+
+}
+
+#time{
+
+    font-size:42px;
+    letter-spacing:2px;
+
+    text-shadow:
+    0 0 8px rgba(255,255,255,.4);
+}
+
+#controls{
+
+    position:absolute;
+
+    top:100%;
+    left:0;
+
+    margin-top:10px;
+
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+
+}
+
+button{
+
+    background:#1f1f1f;
+    color:white;
+
+    border:1px solid white;
+
+    border-radius:8px;
+
+    padding:8px 12px;
+
+    font-weight:bold;
+}
+
+button:active{
+    transform:scale(.95);
+}
+
+.hidden{
+    display:none !important;
 }
 
 </style>
 </head>
 <body>
 
-<div id="timer">
-00:00:00
+<div id="timerBox">
+
+    <div id="ball">⚽</div>
+
+    <div id="period">前半</div>
+
+    <div id="time">00:00:00</div>
+
+    <div id="controls">
+
+        <button id="startBtn">START</button>
+        <button id="stopBtn">STOP</button>
+        <button id="resetBtn">RESET</button>
+
+        <button onclick="setPeriod('前半')">前半</button>
+        <button onclick="setPeriod('後半')">後半</button>
+        <button onclick="setPeriod('PK')">PK</button>
+
+    </div>
+
 </div>
 
 <script>
 
-const STORAGE_KEY =
-"PRO_STREAM_STOPWATCH";
-
-const timer =
-document.getElementById("timer");
+const STORAGE_KEY="soccerTimerData";
 
 let running=false;
 
-let accumulated=0;
+let elapsed=0;
 
 let startPerf=0;
 
 let scale=1;
 
-let posX=window.innerWidth/2;
-let posY=20;
+let period="前半";
+
+const timerEl=document.getElementById("time");
+const periodEl=document.getElementById("period");
+const controls=document.getElementById("controls");
 
 function saveState(){
 
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
 
-            running,
-            accumulated,
+        running,
+        elapsed,
 
-            startPerf,
+        wallClock:Date.now(),
 
-            wallClock:
-                Date.now(),
+        period,
+        scale,
 
-            scale,
-            posX,
-            posY
+        x:timerBox.offsetLeft,
+        y:timerBox.offsetTop
 
-        })
-    );
+    }));
 }
 
 function loadState(){
 
-    const data=
-    localStorage.getItem(
-        STORAGE_KEY
+    const data=JSON.parse(
+        localStorage.getItem(STORAGE_KEY)||"null"
     );
 
     if(!data) return;
 
-    try{
+    elapsed=data.elapsed||0;
 
-        const s=
-        JSON.parse(data);
+    period=data.period||"前半";
 
-        scale=s.scale || 1;
+    scale=data.scale||1;
 
-        posX=s.posX ||
-        window.innerWidth/2;
+    timerBox.style.transform=
+    `scale(${scale})`;
 
-        posY=s.posY || 20;
+    if(data.x!=null)
+        timerBox.style.left=data.x+"px";
 
-        accumulated=
-        s.accumulated || 0;
+    if(data.y!=null)
+        timerBox.style.top=data.y+"px";
 
-        running=
-        s.running || false;
+    if(data.running){
 
-        if(running){
+        const diff=
+        Date.now()-data.wallClock;
 
-            const delta=
-            Date.now() -
-            s.wallClock;
+        elapsed+=diff;
 
-            accumulated += delta;
+        startPerf=performance.now();
 
-            startPerf=
-            performance.now();
-        }
-
-    }catch(e){}
-}
-
-function elapsed(){
-
-    if(running){
-
-        return accumulated +
-        (
-            performance.now()
-            -
-            startPerf
-        );
+        running=true;
     }
 
-    return accumulated;
+    updateDisplay();
+}
+
+function setPeriod(v){
+
+    period=v;
+
+    periodEl.textContent=v;
+
+    saveState();
 }
 
 function format(ms){
 
-    const totalSeconds=
-    Math.floor(ms/1000);
+    let sec=Math.floor(ms/1000);
 
-    const h=
-    Math.floor(
-        totalSeconds/3600
-    );
+    let h=Math.floor(sec/3600);
 
-    const m=
-    Math.floor(
-        (totalSeconds%3600)/60
-    );
+    sec%=3600;
 
-    const s=
-    totalSeconds%60;
+    let m=Math.floor(sec/60);
+
+    let s=sec%60;
 
     return (
-        String(h)
-        .padStart(2,"0")
-        + ":" +
-        String(m)
-        .padStart(2,"0")
-        + ":" +
-        String(s)
-        .padStart(2,"0")
+        String(h).padStart(2,"0")
+        +":"
+        +String(m).padStart(2,"0")
+        +":"
+        +String(s).padStart(2,"0")
     );
 }
 
-function updateView(){
+function currentElapsed(){
 
-    timer.textContent=
-    format(elapsed());
+    if(!running)
+        return elapsed;
 
-    timer.style.left=
-    posX+"px";
-
-    timer.style.top=
-    posY+"px";
-
-    timer.style.transform=
-    `translateX(-50%) scale(${scale})`;
-
-    requestAnimationFrame(
-        updateView
-    );
+    return elapsed+
+    (performance.now()-startPerf);
 }
 
-function startStop(){
+function updateDisplay(){
 
-    if(!running){
+    timerEl.textContent=
+    format(currentElapsed());
 
-        startPerf=
-        performance.now();
+    periodEl.textContent=
+    period;
+}
 
-        running=true;
+function loop(){
 
-    }else{
+    updateDisplay();
 
-        accumulated=
-        elapsed();
+    requestAnimationFrame(loop);
+}
 
-        running=false;
-    }
+document.getElementById("startBtn")
+.onclick=()=>{
+
+    if(running) return;
+
+    startPerf=
+    performance.now();
+
+    running=true;
 
     saveState();
-}
+};
 
-function reset(){
+document.getElementById("stopBtn")
+.onclick=()=>{
+
+    if(!running) return;
+
+    elapsed=
+    currentElapsed();
 
     running=false;
 
-    accumulated=0;
+    saveState();
+};
+
+document.getElementById("resetBtn")
+.onclick=()=>{
+
+    running=false;
+
+    elapsed=0;
+
+    updateDisplay();
 
     saveState();
-}
+};
+
+setInterval(saveState,1000);
 
 loadState();
 
-updateView();
+loop();
 
+const timerBox=
+document.getElementById("timerBox");
 
+let dragging=false;
 
-let tapTimeout;
+let offsetX=0;
+let offsetY=0;
 
-timer.addEventListener(
-"click",
-()=>{
+timerBox.addEventListener("pointerdown",(e)=>{
 
-    clearTimeout(
-        tapTimeout
-    );
+    if(e.target.tagName==="BUTTON")
+        return;
 
-    tapTimeout=
-    setTimeout(()=>{
+    dragging=true;
 
-        startStop();
+    offsetX=e.clientX-
+    timerBox.offsetLeft;
 
-    },250);
-
+    offsetY=e.clientY-
+    timerBox.offsetTop;
 });
 
-timer.addEventListener(
-"dblclick",
-()=>{
+window.addEventListener("pointermove",(e)=>{
 
-    clearTimeout(
-        tapTimeout
-    );
+    if(!dragging) return;
 
-    reset();
+    timerBox.style.left=
+    (e.clientX-offsetX)+"px";
 
+    timerBox.style.top=
+    (e.clientY-offsetY)+"px";
 });
 
+window.addEventListener("pointerup",()=>{
 
-
-let drag=false;
-
-let startX=0;
-let startY=0;
-
-timer.addEventListener(
-"pointerdown",
-(e)=>{
-
-    drag=true;
-
-    startX=
-    e.clientX-posX;
-
-    startY=
-    e.clientY-posY;
-
-});
-
-document.addEventListener(
-"pointermove",
-(e)=>{
-
-    if(!drag) return;
-
-    posX=
-    e.clientX-startX;
-
-    posY=
-    e.clientY-startY;
-
-});
-
-document.addEventListener(
-"pointerup",
-()=>{
-
-    drag=false;
+    dragging=false;
 
     saveState();
-
 });
-
-
 
 let pinchStart=null;
-let scaleStart=1;
+let baseScale=1;
 
-function dist(t1,t2){
+timerBox.addEventListener("touchstart",(e)=>{
 
-    return Math.hypot(
+    if(e.touches.length===2){
 
-        t2.clientX
-        -
-        t1.clientX,
+        pinchStart=Math.hypot(
 
-        t2.clientY
-        -
-        t1.clientY
+            e.touches[0].clientX-
+            e.touches[1].clientX,
 
+            e.touches[0].clientY-
+            e.touches[1].clientY
+        );
+
+        baseScale=scale;
+    }
+});
+
+timerBox.addEventListener("touchmove",(e)=>{
+
+    if(e.touches.length!==2)
+        return;
+
+    e.preventDefault();
+
+    const dist=Math.hypot(
+
+        e.touches[0].clientX-
+        e.touches[1].clientX,
+
+        e.touches[0].clientY-
+        e.touches[1].clientY
     );
-}
 
-document.addEventListener(
-"touchstart",
-(e)=>{
+    scale=
+    Math.max(
+        0.5,
+        Math.min(
+            4,
+            baseScale*
+            (dist/pinchStart)
+        )
+    );
 
-    if(
-        e.touches.length===2
-    ){
-
-        pinchStart=
-        dist(
-            e.touches[0],
-            e.touches[1]
-        );
-
-        scaleStart=
-        scale;
-    }
-
-},
-{passive:false});
-
-document.addEventListener(
-"touchmove",
-(e)=>{
-
-    if(
-        e.touches.length===2 &&
-        pinchStart
-    ){
-
-        const d=
-        dist(
-            e.touches[0],
-            e.touches[1]
-        );
-
-        scale=
-        scaleStart*
-        (d/pinchStart);
-
-        scale=
-        Math.max(
-            0.3,
-            Math.min(
-                scale,
-                8
-            )
-        );
-    }
-
-},
-{passive:false});
-
-document.addEventListener(
-"touchend",
-()=>{
-
-    pinchStart=null;
+    timerBox.style.transform=
+    `scale(${scale})`;
 
     saveState();
 
+},{passive:false});
+
+let tapTimer;
+
+timerBox.addEventListener("click",(e)=>{
+
+    if(e.target.tagName==="BUTTON")
+        return;
+
+    clearTimeout(tapTimer);
+
+    tapTimer=setTimeout(()=>{
+
+        controls.classList.toggle("hidden");
+
+    },120);
 });
-
-
-
-setInterval(
-saveState,
-1000
-);
-
-window.addEventListener(
-"beforeunload",
-saveState
-);
 
 </script>
 

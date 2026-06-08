@@ -1,111 +1,421 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Broadcast Soccer Overlay Pro</title>
-<style>
-body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
-#overlay{position:absolute;top:10px;left:50%;transform:translateX(-50%)}
-#board{background:#111;color:#fff;border-radius:12px;padding:8px 12px;min-width:420px;box-shadow:0 0 12px rgba(0,0,0,.5)}
-.row1{display:flex;justify-content:space-between;align-items:center}
-.team{display:flex;align-items:center;gap:8px;width:140px}
-.logo{width:30px;height:30px;border-radius:50%;background:#333;object-fit:cover}
-.score{font-size:34px;font-weight:700}
-.row2{text-align:center;font-size:24px;font-weight:700;margin-top:4px}
-.panel{display:none;background:rgba(15,15,15,.96);padding:12px;border-radius:10px;margin-top:8px}
-.bigbtn{font-size:24px;padding:14px 18px;min-width:110px;margin:4px;border-radius:8px}
-.scorebtn{font-size:28px;padding:18px 24px;min-width:130px;margin:6px}
-input{font-size:20px;padding:10px}
-</style></head><body>
-<div id="overlay">
-<div id="board">
-<div class="row1">
-<div class="team"><img id="homeLogo" class="logo"><span id="homeName">HOME</span></div>
-<div class="score"><span id="homeScore">0</span>-<span id="awayScore">0</span></div>
-<div class="team" style="justify-content:flex-end"><span id="awayName">AWAY</span><img id="awayLogo" class="logo"></div>
-</div>
-<div class="row2"><span id="timer">00:00:00</span> <span id="period">[前半]</span></div>
-</div>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Soccer Broadcast Overlay</title>
+    <style>
+        :root {
+            --bg-dark: rgba(15, 23, 42, 0.9); /* 透過ダークネイビー */
+            --accent-gold: #f59e0b; /* プレミア風ゴールド */
+            --text-white: #ffffff;
+            --btn-blue: #2563eb;
+            --btn-green: #16a34a;
+            --btn-red: #dc2626;
+        }
 
-<div id="panel1" class="panel">
-<button class="bigbtn" onclick="startTimer()">START</button>
-<button class="bigbtn" onclick="stopTimer()">STOP</button>
-<button class="bigbtn" onclick="resetTimer()">RESET</button><br>
-<button class="bigbtn" onclick="setPeriod('前半')">前半</button>
-<button class="bigbtn" onclick="setPeriod('後半')">後半</button>
-<button class="bigbtn" onclick="setPeriod('PK')">PK</button>
-<hr>
-<button class="scorebtn" onclick="chg('home',1)">HOME +</button>
-<button class="scorebtn" onclick="chg('home',-1)">HOME -</button>
-<button class="scorebtn" onclick="chg('away',1)">AWAY +</button>
-<button class="scorebtn" onclick="chg('away',-1)">AWAY -</button>
-</div>
+        /* 配信画面全体の完全透過 */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: transparent;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-<div id="panel2" class="panel">
-<div>HOME <input id="homeInput"></div>
-<div><input id="homeFile" type="file" accept="image/*"></div>
-<div>AWAY <input id="awayInput"></div>
-<div><input id="awayFile" type="file" accept="image/*"></div>
-<button class="bigbtn" onclick="applyTeams()">適用</button>
-</div>
-</div>
+        /* スコアプレート（ドラッグ可能領域） */
+        #scoreboard-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+            cursor: move;
+            touch-action: none;
+        }
 
-<script>
-const fps=4; // 描画4回/秒で低負荷
-let running=false,startPerf=0,elapsed=0;
-function save(){
-localStorage.setItem('broadcastOverlay',JSON.stringify({
-elapsed,running,period:period.textContent,
-home:homeName.textContent,away:awayName.textContent,
-hs:homeScore.textContent,as:awayScore.textContent,
-hl:homeLogo.src,al:awayLogo.src,left:overlay.style.left,top:overlay.style.top
-}));
-}
-function load(){
-const d=JSON.parse(localStorage.getItem('broadcastOverlay')||'{}');
-if(d.home)homeName.textContent=d.home;
-if(d.away)awayName.textContent=d.away;
-if(d.hs)homeScore.textContent=d.hs;
-if(d.as)awayScore.textContent=d.as;
-if(d.hl)homeLogo.src=d.hl;
-if(d.al)awayLogo.src=d.al;
-if(d.period)period.textContent=d.period;
-elapsed=d.elapsed||0;
-if(d.left){overlay.style.left=d.left;overlay.style.top=d.top;overlay.style.transform='none';}
-if(d.running){running=true;startPerf=performance.now()-elapsed;}
-}
-function draw(){
-const e=running?(performance.now()-startPerf):elapsed;
-const t=Math.floor(e/1000);
-timer.textContent=String(Math.floor(t/3600)).padStart(2,'0')+":"+
-String(Math.floor((t%3600)/60)).padStart(2,'0')+":"+
-String(t%60).padStart(2,'0');
-}
-setInterval(draw,1000/fps);
+        /* プレミアリーグ・Jリーグを意識したスリムデザイン */
+        .plate {
+            display: flex;
+            align-items: center;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            padding: 4px 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-bottom: 3px solid var(--accent-gold);
+            color: var(--text-white);
+            font-weight: bold;
+            font-size: 14px;
+            height: 36px;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
 
-function startTimer(){if(!running){startPerf=performance.now()-elapsed;running=true;save();}}
-function stopTimer(){if(running){elapsed=performance.now()-startPerf;running=false;save();}}
-function resetTimer(){elapsed=0;startPerf=performance.now();draw();save();}
-function setPeriod(p){period.textContent='['+p+']';save();}
-function chg(t,v){let e=t==='home'?homeScore:awayScore;e.textContent=Math.max(0,+e.textContent+v);save();}
-function applyTeams(){homeName.textContent=homeInput.value||'HOME';awayName.textContent=awayInput.value||'AWAY';save();}
-function readLogo(f,img){if(!f)return;let r=new FileReader();r.onload=()=>{img.src=r.result;save()};r.readAsDataURL(f);}
-homeFile.onchange=e=>readLogo(e.target.files[0],homeLogo);
-awayFile.onchange=e=>readLogo(e.target.files[0],awayLogo);
+        /* チーム・エンブレムエリア */
+        .team-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .team-name {
+            max-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .emblem {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+        }
 
-let tap=null;
-board.addEventListener('click',()=>{
-if(tap){clearTimeout(tap);tap=null;panel2.style.display=panel2.style.display==='block'?'none':'block';}
-else{tap=setTimeout(()=>{panel1.style.display=panel1.style.display==='block'?'none':'block';tap=null;},250);}
-});
+        /* スコア数値（視認性重視で透過なし） */
+        .score-display {
+            font-size: 18px;
+            background: #000000;
+            padding: 0 10px;
+            margin: 0 8px;
+            border-radius: 3px;
+            min-width: 45px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
 
-let drag=false,ox=0,oy=0;
-board.addEventListener('touchstart',e=>{drag=true;ox=e.touches[0].clientX-overlay.offsetLeft;oy=e.touches[0].clientY-overlay.offsetTop;},{passive:true});
-document.addEventListener('touchmove',e=>{
-if(!drag)return;
-overlay.style.left=(e.touches[0].clientX-ox)+'px';
-overlay.style.top=(e.touches[0].clientY-oy)+'px';
-},{passive:true});
-document.addEventListener('touchend',()=>{drag=false;save();},{passive:true});
+        /* タイマーエリア */
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 1px solid rgba(255,255,255,0.2);
+            padding-left: 8px;
+            margin-left: 4px;
+        }
+        .period-label {
+            color: var(--accent-gold);
+            font-size: 11px;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        .time-display {
+            font-variant-numeric: tabular-nums;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
 
-load();draw();
-</script></body></html>
+        /* コントロールパネルの共通ベース（誤タップ防止の大型設計） */
+        .ctrl-panel {
+            display: none;
+            margin-top: 15px;
+            background: rgba(30, 41, 59, 0.95);
+            border: 2px solid #475569;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+            width: 290px;
+            box-sizing: border-box;
+        }
+
+        /* パネル1: 試合進行用大型ボタン */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .grid-3:last-child { margin-bottom: 0; }
+
+        .btn {
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 14px 0; /* 誤操作防止の大きめサイズ */
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            active-background: #334155;
+        }
+        .btn:active { opacity: 0.8; }
+        .btn-start { background: var(--btn-green); }
+        .btn-stop { background: var(--btn-red); }
+        .btn-score { background: #5b21b6; font-size: 18px; }
+
+        /* パネル2: 設定・入力エリア */
+        .form-group {
+            margin-bottom: 12px;
+            color: white;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: #94a3b8;
+        }
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px; /* iOSのズーム防止のため16px以上 */
+            border-radius: 4px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            box-sizing: border-box;
+        }
+        .form-group input[type="file"] {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scoreboard-container">
+        
+        <div class="plate" id="main-plate">
+            <div class="team-section">
+                <img id="logo-home" class="emblem" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'><circle cx='12' cy='12' r='10'/></svg>" alt="H">
+                <span id="name-home" class="team-name">HOME</span>
+            </div>
+            
+            <div class="score-display">
+                <span id="score-home">0</span>-<span id="score-away">0</span>
+            </div>
+
+            <div class="team-section">
+                <span id="name-away" class="team-name">AWAY</span>
+                <img id="logo-away" class="emblem" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2364748b'><circle cx='12' cy='12' r='10'/></svg>" alt="A">
+            </div>
+
+            <div class="timer-section">
+                <span id="display-period" class="period-label">前半</span>
+                <span id="display-time" class="time-display">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="ctrl-panel" id="panel-ctrl-1">
+            <div class="grid-3">
+                <button class="btn btn-start" onclick="startTimer()">スタート</button>
+                <button class="btn btn-stop" onclick="stopTimer()">ストップ</button>
+                <button class="btn" onclick="resetTimer()">リセット</button>
+            </div>
+            <div class="grid-3">
+                <button class="btn" onclick="setPeriod('前半')">前半</button>
+                <button class="btn" onclick="setPeriod('後半')">後半</button>
+                <button class="btn" onclick="setPeriod('PK')">PK</button>
+            </div>
+            <div class="grid-3" style="margin-top: 10px; border-top: 1px solid #475569; padding-top: 10px;">
+                <button class="btn btn-score" onclick="changeScore('home', 1)">H点+</button>
+                <button class="btn btn-score" onclick="changeScore('away', 1)">A点+</button>
+                <button class="btn" onclick="resetScore()">点0点</button>
+            </div>
+        </div>
+
+        <div class="ctrl-panel" id="panel-ctrl-2">
+            <div class="form-group">
+                <label>HOME チーム名</label>
+                <input type="text" id="input-home-name" value="HOME" oninput="updateTeams()">
+            </div>
+            <div class="form-group">
+                <label>HOME エンブレム</label>
+                <input type="file" accept="image/*" onchange="updateEmblem(this, 'logo-home')">
+            </div>
+            <hr style="border:0; border-top:1px solid #475569; margin:15px 0;">
+            <div class="form-group">
+                <label>AWAY チーム名</label>
+                <input type="text" id="input-away-name" value="AWAY" oninput="updateTeams()">
+            </div>
+            <div class="form-group">
+                <label>AWAY エンブレム</label>
+                <input type="file" accept="image/*" onchange="updateEmblem(this, 'logo-away')">
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 高精度タイマーロジック (Performance Counter) ---
+        let isRunning = false;
+        let startTime = 0;
+        let elapsedTime = 0; 
+        let timerInterval = null;
+
+        const timeDisplay = document.getElementById('display-time');
+
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            // パフォーマンスカウンターの基準点を現在時間から過去の経過時間を引いた位置に設定
+            startTime = performance.now() - elapsedTime;
+            
+            // 描画更新ループ（負荷削減のため約100ms周期で十分な精度を維持）
+            timerInterval = setInterval(updateTimeDisplay, 100);
+        }
+
+        function stopTimer() {
+            if (!isRunning) return;
+            isRunning = false;
+            clearInterval(timerInterval);
+            elapsedTime = performance.now() - startTime; // ストップした瞬間の正確な経過時間を固定
+        }
+
+        function resetTimer() {
+            stopTimer();
+            elapsedTime = 0;
+            renderTime(0, 0, 0);
+        }
+
+        function updateTimeDisplay() {
+            if (!isRunning) return;
+            const now = performance.now();
+            const diff = now - startTime; // 計算の基準は常にデバイスのハードウェアクロック
+
+            const totalSeconds = Math.floor(diff / 1000);
+            const hrs = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+
+            renderTime(hrs, mins, secs);
+        }
+
+        function renderTime(h, m, s) {
+            timeDisplay.textContent = 
+                String(h).padStart(2, '0') + ':' + 
+                String(m).padStart(2, '0') + ':' + 
+                String(s).padStart(2, '0');
+        }
+
+        function setPeriod(period) {
+            document.getElementById('display-period').textContent = period;
+        }
+
+        // --- スコア管理ロジック ---
+        let scoreHome = 0;
+        let scoreAway = 0;
+
+        function changeScore(team, val) {
+            if (team === 'home') {
+                scoreHome = Math.max(0, scoreHome + val);
+                document.getElementById('score-home').textContent = scoreHome;
+            } else {
+                scoreAway = Math.max(0, scoreAway + val);
+                document.getElementById('score-away').textContent = scoreAway;
+            }
+        }
+
+        function resetScore() {
+            scoreHome = 0;
+            scoreAway = 0;
+            document.getElementById('score-home').textContent = 0;
+            document.getElementById('score-away').textContent = 0;
+        }
+
+        // --- チーム名＆エンブレム更新 ---
+        function updateTeams() {
+            document.getElementById('name-home').textContent = document.getElementById('input-home-name').value || 'HOME';
+            document.getElementById('name-away').textContent = document.getElementById('input-away-name').value || 'AWAY';
+        }
+
+        function updateEmblem(input, targetId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(targetId).src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- タップイベントハンドリング（シングル・ダブルの切り分け） ---
+        const mainPlate = document.getElementById('main-plate');
+        const panel1 = document.getElementById('panel-ctrl-1');
+        const panel2 = document.getElementById('panel-ctrl-2');
+        let tapTimeout;
+        let lastTap = 0;
+
+        mainPlate.addEventListener('touchend', function(e) {
+            // ドラッグ直後の誤発火を防ぐフラグチェック
+            if (isDragging) return; 
+
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            clearTimeout(tapTimeout);
+
+            if (tapLength < 300 && tapLength > 0) {
+                // ダブルタップ：コントロールパネル2
+                togglePanel(panel2);
+                panel1.style.display = 'none'; 
+                e.preventDefault();
+            } else {
+                // シングルタップ：コントロールパネル1
+                tapTimeout = setTimeout(function() {
+                    togglePanel(panel1);
+                    panel2.style.display = 'none';
+                }, 300);
+            }
+            lastTap = currentTime;
+        });
+
+        function togglePanel(panel) {
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+            }
+        }
+
+        // --- モバイル対応タッチ移動（ドラッグ＆ドロップ）ロジック ---
+        const container = document.getElementById('scoreboard-container');
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        mainPlate.addEventListener('touchstart', function(e) {
+            isDragging = false; 
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            
+            // transform: translateX(-50%) の影響を考慮した位置取得
+            const rect = container.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            
+            // スタイル初期化（中央寄せ解除して絶対座標へ固定化）
+            container.style.left = initialX + 'px';
+            container.style.top = initialY + 'px';
+            container.style.transform = 'none';
+        }, { passive: true });
+
+        mainPlate.addEventListener('touchmove', function(e) {
+            isDragging = true; // 動いたらドラッグ判定とし、タップイベントを無効化
+            const touch = e.touches[0];
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+
+            let newX = initialX + dx;
+            let newY = initialY + dy;
+
+            // 画面外へのはみ出し防止制御
+            newX = Math.max(0, Math.min(newX, window.innerWidth - container.offsetWidth));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - container.offsetHeight));
+
+            container.style.left = newX + 'px';
+            container.style.top = newY + 'px';
+        }, { passive: true });
+
+        mainPlate.addEventListener('touchend', function(e) {
+            // タッチ終了時、わずかなディレイの後にドラッグフラグを解除
+            setTimeout(() => { isDragging = false; }, 50);
+        }, { passive: true });
+
+    </script>
+</body>
+</html>

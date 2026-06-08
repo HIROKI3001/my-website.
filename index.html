@@ -1,399 +1,111 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
+<html lang="ja"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>Soccer Broadcast Timer</title>
-
+<title>Broadcast Soccer Overlay Pro</title>
 <style>
-html,body{
-    margin:0;
-    padding:0;
-    background:transparent;
-    overflow:hidden;
-    font-family:
-    "Helvetica Neue",
-    Arial,
-    sans-serif;
-}
-
-/* ===== TIMER ===== */
-
-#overlay{
-    position:absolute;
-    top:10px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:9999;
-    touch-action:none;
-}
-
-#timerBox{
-    display:flex;
-    align-items:center;
-    gap:8px;
-
-    background:rgba(0,0,0,.85);
-
-    padding:6px 12px;
-
-    border-radius:4px;
-
-    cursor:move;
-
-    user-select:none;
-}
-
-/* 時間表示 */
-
-#time{
-    color:#fff;
-
-    font-weight:800;
-
-    font-size:28px;
-
-    letter-spacing:1px;
-
-    text-shadow:
-    0 0 2px #000,
-    0 0 4px #000;
-}
-
-/* 前半後半表示 */
-
-#period{
-    background:#fff;
-
-    color:#000;
-
-    font-size:16px;
-
-    font-weight:700;
-
-    padding:4px 8px;
-
-    border-radius:3px;
-
-    min-width:50px;
-
-    text-align:center;
-}
-
-/* ===== CONTROL PANEL ===== */
-
-#controls{
-
-    display:none;
-
-    margin-top:8px;
-
-    background:rgba(0,0,0,.95);
-
-    padding:10px;
-
-    border-radius:8px;
-
-    width:max-content;
-}
-
-.btn{
-    width:100px;
-    height:48px;
-
-    margin:4px;
-
-    border:none;
-
-    border-radius:8px;
-
-    font-size:18px;
-
-    font-weight:bold;
-
-    cursor:pointer;
-}
-
-.start{background:#00c853;color:#fff;}
-.stop{background:#d50000;color:#fff;}
-.reset{background:#455a64;color:#fff;}
-
-.periodBtn{
-    background:#1976d2;
-    color:#fff;
-}
-</style>
-</head>
-
-<body>
-
+body{margin:0;background:transparent;overflow:hidden;font-family:Arial,sans-serif}
+#overlay{position:absolute;top:10px;left:50%;transform:translateX(-50%)}
+#board{background:#111;color:#fff;border-radius:12px;padding:8px 12px;min-width:420px;box-shadow:0 0 12px rgba(0,0,0,.5)}
+.row1{display:flex;justify-content:space-between;align-items:center}
+.team{display:flex;align-items:center;gap:8px;width:140px}
+.logo{width:30px;height:30px;border-radius:50%;background:#333;object-fit:cover}
+.score{font-size:34px;font-weight:700}
+.row2{text-align:center;font-size:24px;font-weight:700;margin-top:4px}
+.panel{display:none;background:rgba(15,15,15,.96);padding:12px;border-radius:10px;margin-top:8px}
+.bigbtn{font-size:24px;padding:14px 18px;min-width:110px;margin:4px;border-radius:8px}
+.scorebtn{font-size:28px;padding:18px 24px;min-width:130px;margin:6px}
+input{font-size:20px;padding:10px}
+</style></head><body>
 <div id="overlay">
+<div id="board">
+<div class="row1">
+<div class="team"><img id="homeLogo" class="logo"><span id="homeName">HOME</span></div>
+<div class="score"><span id="homeScore">0</span>-<span id="awayScore">0</span></div>
+<div class="team" style="justify-content:flex-end"><span id="awayName">AWAY</span><img id="awayLogo" class="logo"></div>
+</div>
+<div class="row2"><span id="timer">00:00:00</span> <span id="period">[前半]</span></div>
+</div>
 
-    <div id="timerBox">
+<div id="panel1" class="panel">
+<button class="bigbtn" onclick="startTimer()">START</button>
+<button class="bigbtn" onclick="stopTimer()">STOP</button>
+<button class="bigbtn" onclick="resetTimer()">RESET</button><br>
+<button class="bigbtn" onclick="setPeriod('前半')">前半</button>
+<button class="bigbtn" onclick="setPeriod('後半')">後半</button>
+<button class="bigbtn" onclick="setPeriod('PK')">PK</button>
+<hr>
+<button class="scorebtn" onclick="chg('home',1)">HOME +</button>
+<button class="scorebtn" onclick="chg('home',-1)">HOME -</button>
+<button class="scorebtn" onclick="chg('away',1)">AWAY +</button>
+<button class="scorebtn" onclick="chg('away',-1)">AWAY -</button>
+</div>
 
-        <div id="time">00:00:00</div>
-
-        <div id="period">前半</div>
-
-    </div>
-
-    <div id="controls">
-
-        <button class="btn start" id="startBtn">
-            スタート
-        </button>
-
-        <button class="btn stop" id="stopBtn">
-            ストップ
-        </button>
-
-        <button class="btn reset" id="resetBtn">
-            リセット
-        </button>
-
-        <br>
-
-        <button class="btn periodBtn" data-period="前半">
-            前半
-        </button>
-
-        <button class="btn periodBtn" data-period="後半">
-            後半
-        </button>
-
-        <button class="btn periodBtn" data-period="PK">
-            PK
-        </button>
-
-    </div>
-
+<div id="panel2" class="panel">
+<div>HOME <input id="homeInput"></div>
+<div><input id="homeFile" type="file" accept="image/*"></div>
+<div>AWAY <input id="awayInput"></div>
+<div><input id="awayFile" type="file" accept="image/*"></div>
+<button class="bigbtn" onclick="applyTeams()">適用</button>
+</div>
 </div>
 
 <script>
-
-/* ==========================
-   HIGH PRECISION TIMER
-========================== */
-
-const timeEl = document.getElementById("time");
-const periodEl = document.getElementById("period");
-
-let running=false;
-
-let startPerf=0;
-let elapsed=0;
-
-/*
-保存
-*/
-
-function saveState(){
-
-    localStorage.setItem(
-        "soccerTimer",
-        JSON.stringify({
-            running,
-            elapsed,
-            startPerf,
-            period:periodEl.textContent,
-            posX:overlay.style.left,
-            posY:overlay.style.top
-        })
-    );
+const fps=4; // 描画4回/秒で低負荷
+let running=false,startPerf=0,elapsed=0;
+function save(){
+localStorage.setItem('broadcastOverlay',JSON.stringify({
+elapsed,running,period:period.textContent,
+home:homeName.textContent,away:awayName.textContent,
+hs:homeScore.textContent,as:awayScore.textContent,
+hl:homeLogo.src,al:awayLogo.src,left:overlay.style.left,top:overlay.style.top
+}));
 }
-
-/*
-復元
-*/
-
-(function(){
-
-    const data=
-    JSON.parse(
-    localStorage.getItem("soccerTimer")
-    );
-
-    if(!data) return;
-
-    elapsed=data.elapsed||0;
-
-    periodEl.textContent=data.period||"前半";
-
-    if(data.posX) overlay.style.left=data.posX;
-    if(data.posY) overlay.style.top=data.posY;
-
-    if(data.running){
-
-        running=true;
-
-        startPerf=
-        performance.now()-elapsed;
-
-    }
-
-})();
-
-/* ==========================
-   TIMER LOOP
-========================== */
-
-function update(){
-
-    if(running){
-
-        elapsed=
-        performance.now()-startPerf;
-
-    }
-
-    const totalSec=
-    Math.floor(elapsed/1000);
-
-    const h=
-    String(Math.floor(totalSec/3600))
-    .padStart(2,"0");
-
-    const m=
-    String(Math.floor(totalSec%3600/60))
-    .padStart(2,"0");
-
-    const s=
-    String(totalSec%60)
-    .padStart(2,"0");
-
-    timeEl.textContent=
-    `${h}:${m}:${s}`;
-
-    requestAnimationFrame(update);
+function load(){
+const d=JSON.parse(localStorage.getItem('broadcastOverlay')||'{}');
+if(d.home)homeName.textContent=d.home;
+if(d.away)awayName.textContent=d.away;
+if(d.hs)homeScore.textContent=d.hs;
+if(d.as)awayScore.textContent=d.as;
+if(d.hl)homeLogo.src=d.hl;
+if(d.al)awayLogo.src=d.al;
+if(d.period)period.textContent=d.period;
+elapsed=d.elapsed||0;
+if(d.left){overlay.style.left=d.left;overlay.style.top=d.top;overlay.style.transform='none';}
+if(d.running){running=true;startPerf=performance.now()-elapsed;}
 }
+function draw(){
+const e=running?(performance.now()-startPerf):elapsed;
+const t=Math.floor(e/1000);
+timer.textContent=String(Math.floor(t/3600)).padStart(2,'0')+":"+
+String(Math.floor((t%3600)/60)).padStart(2,'0')+":"+
+String(t%60).padStart(2,'0');
+}
+setInterval(draw,1000/fps);
 
-update();
+function startTimer(){if(!running){startPerf=performance.now()-elapsed;running=true;save();}}
+function stopTimer(){if(running){elapsed=performance.now()-startPerf;running=false;save();}}
+function resetTimer(){elapsed=0;startPerf=performance.now();draw();save();}
+function setPeriod(p){period.textContent='['+p+']';save();}
+function chg(t,v){let e=t==='home'?homeScore:awayScore;e.textContent=Math.max(0,+e.textContent+v);save();}
+function applyTeams(){homeName.textContent=homeInput.value||'HOME';awayName.textContent=awayInput.value||'AWAY';save();}
+function readLogo(f,img){if(!f)return;let r=new FileReader();r.onload=()=>{img.src=r.result;save()};r.readAsDataURL(f);}
+homeFile.onchange=e=>readLogo(e.target.files[0],homeLogo);
+awayFile.onchange=e=>readLogo(e.target.files[0],awayLogo);
 
-/* ==========================
-   BUTTONS
-========================== */
-
-document
-.getElementById("startBtn")
-.onclick=()=>{
-
-    if(running) return;
-
-    running=true;
-
-    startPerf=
-    performance.now()-elapsed;
-
-    saveState();
-};
-
-document
-.getElementById("stopBtn")
-.onclick=()=>{
-
-    running=false;
-
-    saveState();
-};
-
-document
-.getElementById("resetBtn")
-.onclick=()=>{
-
-    running=false;
-
-    elapsed=0;
-
-    timeEl.textContent=
-    "00:00:00";
-
-    saveState();
-};
-
-document
-.querySelectorAll(".periodBtn")
-.forEach(btn=>{
-
-    btn.onclick=()=>{
-
-        periodEl.textContent=
-        btn.dataset.period;
-
-        saveState();
-    };
-
+let tap=null;
+board.addEventListener('click',()=>{
+if(tap){clearTimeout(tap);tap=null;panel2.style.display=panel2.style.display==='block'?'none':'block';}
+else{tap=setTimeout(()=>{panel1.style.display=panel1.style.display==='block'?'none':'block';tap=null;},250);}
 });
 
-/* ==========================
-   PANEL TOGGLE
-========================== */
+let drag=false,ox=0,oy=0;
+board.addEventListener('touchstart',e=>{drag=true;ox=e.touches[0].clientX-overlay.offsetLeft;oy=e.touches[0].clientY-overlay.offsetTop;},{passive:true});
+document.addEventListener('touchmove',e=>{
+if(!drag)return;
+overlay.style.left=(e.touches[0].clientX-ox)+'px';
+overlay.style.top=(e.touches[0].clientY-oy)+'px';
+},{passive:true});
+document.addEventListener('touchend',()=>{drag=false;save();},{passive:true});
 
-const controls=
-document.getElementById("controls");
-
-document
-.getElementById("timerBox")
-.addEventListener("click",()=>{
-
-    controls.style.display=
-    controls.style.display==="block"
-    ? "none"
-    : "block";
-
-});
-
-/* ==========================
-   DRAG MOVE
-========================== */
-
-const overlay=
-document.getElementById("overlay");
-
-let dragging=false;
-let offsetX=0;
-let offsetY=0;
-
-overlay.addEventListener("pointerdown",(e)=>{
-
-    dragging=true;
-
-    offsetX=
-    e.clientX-overlay.offsetLeft;
-
-    offsetY=
-    e.clientY-overlay.offsetTop;
-
-});
-
-window.addEventListener("pointermove",(e)=>{
-
-    if(!dragging) return;
-
-    overlay.style.left=
-    (e.clientX-offsetX)+"px";
-
-    overlay.style.top=
-    (e.clientY-offsetY)+"px";
-
-    overlay.style.transform="none";
-});
-
-window.addEventListener("pointerup",()=>{
-
-    dragging=false;
-
-    saveState();
-
-});
-
-/* ==========================
-   AUTO SAVE
-========================== */
-
-setInterval(saveState,5000);
-
-</script>
-
-</body>
-</html>
+load();draw();
+</script></body></html>

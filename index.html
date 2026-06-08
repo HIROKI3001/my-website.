@@ -1,290 +1,278 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>Soccer Match Timer</title>
+<title>Soccer Broadcast Timer</title>
 
 <style>
-
-body{
+html,body{
     margin:0;
+    padding:0;
     background:transparent;
     overflow:hidden;
-    font-family:"Arial Black",sans-serif;
+    font-family:
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+/* ===== TIMER ===== */
+
+#overlay{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:9999;
+    touch-action:none;
 }
 
 #timerBox{
-
-    position:absolute;
-
-    background:#111111CC;
-
-    border:2px solid #fff;
-    border-radius:12px;
-
-    color:#fff;
-
-    padding:12px 18px;
-
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:8px;
+
+    background:rgba(0,0,0,.85);
+
+    padding:6px 12px;
+
+    border-radius:4px;
+
+    cursor:move;
 
     user-select:none;
-    touch-action:none;
-
-    transform-origin:center center;
-
-    box-shadow:
-    0 0 6px rgba(255,255,255,.15);
-
-    will-change:transform;
 }
 
-#ball{
-    font-size:30px;
-}
-
-#period{
-
-    font-size:28px;
-    min-width:60px;
-
-    text-align:center;
-
-    color:#FFD700;
-
-    text-shadow:
-    0 0 4px rgba(255,215,0,.5);
-}
+/* 時間表示 */
 
 #time{
+    color:#fff;
 
-    font-size:42px;
+    font-weight:800;
 
-    letter-spacing:2px;
+    font-size:28px;
+
+    letter-spacing:1px;
 
     text-shadow:
-    0 0 3px rgba(255,255,255,.3);
+    0 0 2px #000,
+    0 0 4px #000;
 }
+
+/* 前半後半表示 */
+
+#period{
+    background:#fff;
+
+    color:#000;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    padding:4px 8px;
+
+    border-radius:3px;
+
+    min-width:50px;
+
+    text-align:center;
+}
+
+/* ===== CONTROL PANEL ===== */
 
 #controls{
 
-    position:absolute;
+    display:none;
 
-    top:100%;
-    left:0;
+    margin-top:8px;
 
-    margin-top:10px;
+    background:rgba(0,0,0,.95);
 
-    display:flex;
-
-    flex-wrap:wrap;
-
-    gap:6px;
-}
-
-button{
-
-    background:#1f1f1f;
-
-    color:white;
-
-    border:1px solid white;
+    padding:10px;
 
     border-radius:8px;
 
-    padding:8px 12px;
+    width:max-content;
+}
+
+.btn{
+    width:100px;
+    height:48px;
+
+    margin:4px;
+
+    border:none;
+
+    border-radius:8px;
+
+    font-size:18px;
 
     font-weight:bold;
+
+    cursor:pointer;
 }
 
-button:active{
-    transform:scale(.95);
-}
+.start{background:#00c853;color:#fff;}
+.stop{background:#d50000;color:#fff;}
+.reset{background:#455a64;color:#fff;}
 
-.hidden{
-    display:none !important;
+.periodBtn{
+    background:#1976d2;
+    color:#fff;
 }
-
 </style>
-
 </head>
+
 <body>
 
-<div id="timerBox">
+<div id="overlay">
 
-```
-<div id="ball">⚽</div>
+    <div id="timerBox">
 
-<div id="period">前半</div>
+        <div id="time">00:00:00</div>
 
-<div id="time">00:00:00</div>
+        <div id="period">前半</div>
 
-<div id="controls">
+    </div>
 
-    <button id="startBtn">START</button>
-    <button id="stopBtn">STOP</button>
-    <button id="resetBtn">RESET</button>
+    <div id="controls">
 
-    <button onclick="setPeriod('前半')">前半</button>
-    <button onclick="setPeriod('後半')">後半</button>
-    <button onclick="setPeriod('PK')">PK</button>
+        <button class="btn start" id="startBtn">
+            スタート
+        </button>
 
-</div>
-```
+        <button class="btn stop" id="stopBtn">
+            ストップ
+        </button>
+
+        <button class="btn reset" id="resetBtn">
+            リセット
+        </button>
+
+        <br>
+
+        <button class="btn periodBtn" data-period="前半">
+            前半
+        </button>
+
+        <button class="btn periodBtn" data-period="後半">
+            後半
+        </button>
+
+        <button class="btn periodBtn" data-period="PK">
+            PK
+        </button>
+
+    </div>
 
 </div>
 
 <script>
 
-const STORAGE_KEY="soccerTimerData";
+/* ==========================
+   HIGH PRECISION TIMER
+========================== */
 
-const timerBox=document.getElementById("timerBox");
-const timerEl=document.getElementById("time");
-const periodEl=document.getElementById("period");
-const controls=document.getElementById("controls");
+const timeEl = document.getElementById("time");
+const periodEl = document.getElementById("period");
 
 let running=false;
-let elapsed=0;
+
 let startPerf=0;
+let elapsed=0;
 
-let period="前半";
-
-let scale=1;
-
-let posX=100;
-let posY=100;
-
-let lastDisplay="";
-
-function applyTransform(){
-
-    timerBox.style.transform=
-    `translate3d(${posX}px,${posY}px,0) scale(${scale})`;
-}
-
-function currentElapsed(){
-
-    if(!running) return elapsed;
-
-    return elapsed+
-    (performance.now()-startPerf);
-}
+/*
+保存
+*/
 
 function saveState(){
 
     localStorage.setItem(
-        STORAGE_KEY,
-
+        "soccerTimer",
         JSON.stringify({
-
             running,
-
-            elapsed:
-            currentElapsed(),
-
-            wallClock:
-            Date.now(),
-
-            period,
-
-            scale,
-
-            posX,
-            posY
+            elapsed,
+            startPerf,
+            period:periodEl.textContent,
+            posX:overlay.style.left,
+            posY:overlay.style.top
         })
     );
 }
 
-function loadState(){
+/*
+復元
+*/
+
+(function(){
 
     const data=
     JSON.parse(
-        localStorage.getItem(STORAGE_KEY)||"null"
+    localStorage.getItem("soccerTimer")
     );
 
-    if(!data) {
-
-        applyTransform();
-
-        return;
-    }
+    if(!data) return;
 
     elapsed=data.elapsed||0;
 
-    period=data.period||"前半";
+    periodEl.textContent=data.period||"前半";
 
-    scale=data.scale||1;
-
-    posX=data.posX||100;
-
-    posY=data.posY||100;
+    if(data.posX) overlay.style.left=data.posX;
+    if(data.posY) overlay.style.top=data.posY;
 
     if(data.running){
 
-        elapsed+=
-        Date.now()-data.wallClock;
+        running=true;
 
         startPerf=
-        performance.now();
+        performance.now()-elapsed;
 
-        running=true;
     }
 
-    applyTransform();
+})();
 
-    updateDisplay();
-}
+/* ==========================
+   TIMER LOOP
+========================== */
 
-function setPeriod(v){
+function update(){
 
-    period=v;
+    if(running){
 
-    updateDisplay();
+        elapsed=
+        performance.now()-startPerf;
 
-    saveState();
-}
-
-function updateDisplay(){
-
-    const ms=
-    currentElapsed();
-
-    let sec=
-    Math.floor(ms/1000);
-
-    let h=
-    Math.floor(sec/3600);
-
-    sec%=3600;
-
-    let m=
-    Math.floor(sec/60);
-
-    let s=
-    sec%60;
-
-    const text=
-
-    String(h).padStart(2,"0")
-    +":"
-    +String(m).padStart(2,"0")
-    +":"
-    +String(s).padStart(2,"0");
-
-    if(text!==lastDisplay){
-
-        lastDisplay=text;
-
-        timerEl.textContent=text;
     }
 
-    periodEl.textContent=period;
+    const totalSec=
+    Math.floor(elapsed/1000);
+
+    const h=
+    String(Math.floor(totalSec/3600))
+    .padStart(2,"0");
+
+    const m=
+    String(Math.floor(totalSec%3600/60))
+    .padStart(2,"0");
+
+    const s=
+    String(totalSec%60)
+    .padStart(2,"0");
+
+    timeEl.textContent=
+    `${h}:${m}:${s}`;
+
+    requestAnimationFrame(update);
 }
+
+update();
+
+/* ==========================
+   BUTTONS
+========================== */
 
 document
 .getElementById("startBtn")
@@ -292,10 +280,10 @@ document
 
     if(running) return;
 
-    startPerf=
-    performance.now();
-
     running=true;
+
+    startPerf=
+    performance.now()-elapsed;
 
     saveState();
 };
@@ -304,16 +292,9 @@ document
 .getElementById("stopBtn")
 .onclick=()=>{
 
-    if(!running) return;
-
-    elapsed=
-    currentElapsed();
-
     running=false;
 
     saveState();
-
-    updateDisplay();
 };
 
 document
@@ -324,171 +305,93 @@ document
 
     elapsed=0;
 
-    updateDisplay();
+    timeEl.textContent=
+    "00:00:00";
 
     saveState();
 };
 
-setInterval(
-updateDisplay,
-1000
-);
+document
+.querySelectorAll(".periodBtn")
+.forEach(btn=>{
+
+    btn.onclick=()=>{
+
+        periodEl.textContent=
+        btn.dataset.period;
+
+        saveState();
+    };
+
+});
+
+/* ==========================
+   PANEL TOGGLE
+========================== */
+
+const controls=
+document.getElementById("controls");
+
+document
+.getElementById("timerBox")
+.addEventListener("click",()=>{
+
+    controls.style.display=
+    controls.style.display==="block"
+    ? "none"
+    : "block";
+
+});
+
+/* ==========================
+   DRAG MOVE
+========================== */
+
+const overlay=
+document.getElementById("overlay");
 
 let dragging=false;
+let offsetX=0;
+let offsetY=0;
 
-let dragOffsetX=0;
-let dragOffsetY=0;
-
-timerBox.addEventListener(
-
-"pointerdown",
-
-e=>{
-
-    if(e.target.tagName==="BUTTON")
-        return;
+overlay.addEventListener("pointerdown",(e)=>{
 
     dragging=true;
 
-    dragOffsetX=
-    e.clientX-posX;
+    offsetX=
+    e.clientX-overlay.offsetLeft;
 
-    dragOffsetY=
-    e.clientY-posY;
+    offsetY=
+    e.clientY-overlay.offsetTop;
+
 });
 
-window.addEventListener(
+window.addEventListener("pointermove",(e)=>{
 
-"pointermove",
+    if(!dragging) return;
 
-e=>{
+    overlay.style.left=
+    (e.clientX-offsetX)+"px";
 
-    if(!dragging)
-        return;
+    overlay.style.top=
+    (e.clientY-offsetY)+"px";
 
-    posX=
-    e.clientX-dragOffsetX;
+    overlay.style.transform="none";
+});
 
-    posY=
-    e.clientY-dragOffsetY;
-
-    applyTransform();
-
-},
-
-{passive:true}
-);
-
-window.addEventListener(
-
-"pointerup",
-
-()=>{
-
-    if(!dragging)
-        return;
+window.addEventListener("pointerup",()=>{
 
     dragging=false;
 
     saveState();
+
 });
 
-let pinchStart=0;
-let baseScale=1;
+/* ==========================
+   AUTO SAVE
+========================== */
 
-timerBox.addEventListener(
-
-"touchstart",
-
-e=>{
-
-    if(e.touches.length!==2)
-        return;
-
-    pinchStart=
-    Math.hypot(
-
-        e.touches[0].clientX-
-        e.touches[1].clientX,
-
-        e.touches[0].clientY-
-        e.touches[1].clientY
-    );
-
-    baseScale=scale;
-},
-
-{passive:true}
-);
-
-timerBox.addEventListener(
-
-"touchmove",
-
-e=>{
-
-    if(e.touches.length!==2)
-        return;
-
-    e.preventDefault();
-
-    const dist=
-    Math.hypot(
-
-        e.touches[0].clientX-
-        e.touches[1].clientX,
-
-        e.touches[0].clientY-
-        e.touches[1].clientY
-    );
-
-    scale=
-
-    Math.max(
-        0.5,
-
-        Math.min(
-            4,
-
-            baseScale*
-            (dist/pinchStart)
-        )
-    );
-
-    applyTransform();
-
-},
-
-{passive:false}
-);
-
-timerBox.addEventListener(
-
-"touchend",
-
-()=>{
-
-    saveState();
-});
-
-timerBox.addEventListener(
-
-"click",
-
-e=>{
-
-    if(
-        e.target.tagName==="BUTTON"
-    ) return;
-
-    controls.classList.toggle(
-        "hidden"
-    );
-});
-
-loadState();
-
-updateDisplay();
+setInterval(saveState,5000);
 
 </script>
 

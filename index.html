@@ -1,132 +1,62 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Soccer Broadcast Overlay Hybrid Pro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Soccer Broadcast Overlay Hybrid Pro Lite</title>
 <style>
-:root{
-  --plate-bg: rgba(12,14,20,.78);
-  --plate-edge: rgba(255,255,255,.92);
-  --accent-blue:#0b63ff;
-  --accent-purple:#4212a8;
-  --accent-gold:#f4c542;
-  --text:#fff;
-  --dark:#07090f;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{
-  margin:0;width:100%;height:100%;overflow:hidden;background:transparent;
-  font-family:Arial,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
-  user-select:none;-webkit-user-select:none;touch-action:none;
-}
-#stage{position:fixed;inset:0;background:transparent;overflow:hidden;}
-#overlay{
-  position:absolute;top:8px;left:50%;
-  transform:translateX(-50%) scale(var(--scale,1));
-  transform-origin:top center;
-  display:flex;align-items:center;height:42px;min-width:520px;
-  color:var(--text);border-radius:9px;overflow:hidden;
-  background:linear-gradient(90deg,rgba(8,10,18,.72),rgba(26,31,45,.68),rgba(8,10,18,.72));
-  border:1px solid rgba(255,255,255,.7);
-  box-shadow:0 3px 12px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.08);
-  cursor:move;
-}
-#overlay::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(90deg,rgba(11,99,255,.38),transparent 25%,transparent 75%,rgba(66,18,168,.38));
-}
-.team{position:relative;z-index:1;display:flex;align-items:center;width:142px;height:100%;padding:0 8px;gap:6px;background:rgba(0,0,0,.34);}
-.team.away{justify-content:flex-end;}
-.logo{width:25px;height:25px;border-radius:50%;background:#fff;object-fit:cover;border:1px solid rgba(255,255,255,.9);flex:0 0 auto;}
-.name{font-weight:900;font-size:13px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #000;}
-.scoreBox{position:relative;z-index:2;height:100%;display:flex;align-items:center;background:#fff;color:#080b13;font-weight:900;font-size:26px;letter-spacing:.04em;padding:0 13px;border-left:2px solid var(--accent-blue);border-right:2px solid var(--accent-purple);}
-.scoreDash{padding:0 5px;color:#222;}
-.timeBox{position:relative;z-index:1;height:100%;display:flex;align-items:center;gap:7px;padding:0 10px;background:linear-gradient(135deg,#061e55,#0b63ff 48%,#4212a8);border-left:1px solid rgba(255,255,255,.35);}
-#clock{font-family:"Arial Black",Arial,sans-serif;font-size:18px;letter-spacing:.04em;text-shadow:0 1px 2px #000;}
-#phase,#at{font-size:12px;font-weight:900;background:rgba(255,255,255,.96);color:#08101e;border-radius:4px;padding:3px 5px;line-height:1;}
-#at{display:none;background:var(--accent-gold);}
-.goalFlash{animation:goal .6s ease 1;}@keyframes goal{0%{filter:brightness(1)}35%{filter:brightness(1.9)}100%{filter:brightness(1)}}
-.panel{
-  position:absolute;left:50%;top:58px;transform:translateX(-50%);
-  display:none;background:rgba(8,10,16,.93);color:#fff;border:1px solid rgba(255,255,255,.72);
-  border-radius:12px;padding:10px;z-index:20;box-shadow:0 4px 16px rgba(0,0,0,.35);min-width:520px;
-}
-.panel.show{display:block;}
-.row{display:flex;flex-wrap:wrap;gap:7px;align-items:center;justify-content:center;margin:5px 0;}
-button,label.fileBtn{
-  border:0;border-radius:8px;background:#fff;color:#08101e;font-weight:900;font-size:18px;padding:11px 14px;min-width:78px;min-height:45px;
-}
-button.primary{background:#0b63ff;color:#fff;}button.warn{background:#f4c542;color:#111;}button.danger{background:#ff3b30;color:#fff;}button.dark{background:#242936;color:#fff;}
-input[type="text"],input[type="number"]{font-size:18px;padding:11px;border-radius:8px;border:0;min-height:45px;width:150px;font-weight:800;}
-input[type="file"]{display:none;}.hint{font-size:12px;opacity:.8;text-align:center;margin-top:5px;}.smallBtn{font-size:15px;min-width:56px;padding:9px 10px;}
-@media(max-width:720px){#overlay{min-width:500px;height:40px}.panel{min-width:500px}.team{width:132px}.scoreBox{font-size:24px}#clock{font-size:17px}}
+:root{--s:1;--bg:rgba(10,12,18,.82);--edge:rgba(255,255,255,.86);--blue:#0867ff;--purple:#391098;--gold:#f2c94c;--txt:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:Arial,"Yu Gothic",sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+#stage{position:fixed;inset:0;background:transparent;overflow:hidden}
+#plate{position:absolute;top:8px;left:50%;width:520px;height:40px;transform:translateX(-50%) scale(var(--s));transform-origin:top center;display:flex;align-items:center;color:var(--txt);border:1px solid var(--edge);border-radius:8px;background:var(--bg);overflow:hidden;will-change:transform,left,top;contain:layout paint style}
+.t{height:100%;display:flex;align-items:center;background:rgba(0,0,0,.32);padding:0 7px;gap:5px;min-width:138px;max-width:138px}.ta{justify-content:flex-end}.logo{width:23px;height:23px;border-radius:50%;background:#20242f;object-fit:cover;border:1px solid rgba(255,255,255,.6);flex:0 0 auto}.name{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92px;text-shadow:0 1px 2px #000}.score{height:100%;min-width:64px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;letter-spacing:1px;background:linear-gradient(180deg,var(--blue),var(--purple));border-left:1px solid rgba(255,255,255,.4);border-right:1px solid rgba(255,255,255,.4)}
+.mid{height:100%;display:flex;align-items:center;justify-content:center;gap:5px;min-width:178px;background:rgba(0,0,0,.26)}#phase{font-size:13px;font-weight:900;color:#111;background:var(--gold);border-radius:4px;padding:3px 5px;min-width:34px;text-align:center}#clock{font-size:20px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums}.at{font-size:12px;font-weight:900;color:#fff;background:#d71920;border-radius:4px;padding:2px 4px;display:none}.pkmode .score{background:linear-gradient(180deg,#111,#444)}.goal{animation:g .45s linear 1}@keyframes g{50%{filter:brightness(1.8);transform:scale(1.04)}}
+.panel{position:absolute;left:50%;top:56px;transform:translateX(-50%);display:none;background:rgba(8,10,15,.94);border:1px solid rgba(255,255,255,.72);border-radius:10px;padding:9px;color:#fff;z-index:9;box-shadow:0 2px 8px rgba(0,0,0,.35);contain:layout paint style}.panel.show{display:block}.row{display:flex;gap:6px;margin:5px 0;justify-content:center;align-items:center}.btn{font-size:18px;font-weight:900;min-width:72px;min-height:42px;border:0;border-radius:8px;background:#f4f4f4;color:#111;padding:7px 8px}.btn:active{transform:scale(.96)}.b1{background:#12b76a;color:#fff}.b2{background:#ef4444;color:#fff}.b3{background:#2563eb;color:#fff}.b4{background:#f2c94c;color:#111}.inp{font-size:18px;min-height:42px;width:160px;border-radius:8px;border:0;padding:6px 8px}.file{font-size:16px;width:220px;background:#fff;color:#111;border-radius:8px;padding:8px}.small{font-size:14px;color:#ddd}.hide{display:none!important}
+@media(max-width:560px){#plate{width:500px}.t{min-width:132px;max-width:132px}.mid{min-width:172px}.name{max-width:86px}}
 </style>
 </head>
 <body>
 <div id="stage">
-  <div id="overlay" aria-label="soccer score overlay">
-    <div class="team home"><img id="homeLogo" class="logo" alt="HOME"><span id="homeName" class="name">HOME</span></div>
-    <div class="scoreBox"><span id="homeScore">0</span><span class="scoreDash">-</span><span id="awayScore">0</span></div>
-    <div class="team away"><span id="awayName" class="name">AWAY</span><img id="awayLogo" class="logo" alt="AWAY"></div>
-    <div class="timeBox"><span id="clock">00:00:00</span><span id="phase">前半</span><span id="at">AT +0</span></div>
+  <div id="plate" aria-label="score overlay">
+    <div class="t"><img id="hl" class="logo" alt=""><span id="hn" class="name">HOME</span></div>
+    <div id="sc" class="score"><span id="hs">0</span><span>-</span><span id="as">0</span></div>
+    <div class="t ta"><span id="an" class="name">AWAY</span><img id="al" class="logo" alt=""></div>
+    <div class="mid"><span id="phase">前半</span><span id="clock">00:00:00</span><span id="at" class="at">+0</span></div>
   </div>
-
-  <div id="panel1" class="panel">
-    <div class="row">
-      <button class="primary" id="startBtn">スタート</button><button class="danger" id="stopBtn">ストップ</button><button class="warn" id="resetBtn">リセット</button>
-      <button id="firstBtn">前半</button><button id="secondBtn">後半</button><button id="pkBtn">PK</button>
-    </div>
-    <div class="row">
-      <button id="homePlus">HOME +1</button><button id="homeMinus">HOME -1</button><button id="awayPlus">AWAY +1</button><button id="awayMinus">AWAY -1</button>
-    </div>
-    <div class="row">
-      <button id="atMinus" class="smallBtn">AT-</button><button id="atPlus" class="smallBtn">AT+</button><button id="atToggle" class="smallBtn dark">AT表示</button>
-      <button id="saveBtn" class="smallBtn dark">保存</button><button id="clearBtn" class="smallBtn dark">初期化</button>
-    </div>
-    <div class="hint">シングルタップで表示/非表示。ドラッグ移動・ピンチ拡大縮小対応。</div>
+  <div id="p1" class="panel">
+    <div class="row"><button class="btn b1" data-a="start">スタート</button><button class="btn b2" data-a="stop">ストップ</button><button class="btn" data-a="reset">リセット</button></div>
+    <div class="row"><button class="btn b4" data-a="first">前半</button><button class="btn b4" data-a="second">後半</button><button class="btn b4" data-a="pk">PK</button></div>
+    <div class="row"><button class="btn b3" data-a="hplus">HOME +</button><button class="btn" data-a="hminus">HOME -</button><button class="btn b3" data-a="aplus">AWAY +</button><button class="btn" data-a="aminus">AWAY -</button></div>
+    <div class="row"><button class="btn" data-a="atminus">AT -</button><button class="btn b2" data-a="atplus">AT +</button><button class="btn" data-a="save">保存</button></div>
   </div>
-
-  <div id="panel2" class="panel">
-    <div class="row"><input id="homeInput" type="text" placeholder="HOME名"><input id="awayInput" type="text" placeholder="AWAY名"><button id="applyNames" class="primary">反映</button></div>
-    <div class="row">
-      <label class="fileBtn">HOME画像<input id="homeFile" type="file" accept="image/*"></label>
-      <label class="fileBtn">AWAY画像<input id="awayFile" type="file" accept="image/*"></label>
-    </div>
-    <div class="row"><button id="hideLogos" class="smallBtn dark">画像ON/OFF</button><button id="resetPos" class="smallBtn dark">位置リセット</button><button id="scaleMinus" class="smallBtn">縮小</button><button id="scalePlus" class="smallBtn">拡大</button></div>
-    <div class="hint">ダブルタップで表示/非表示。画像は端末内に保存され、再接続後も復元します。</div>
+  <div id="p2" class="panel">
+    <div class="row"><span class="small">HOME</span><input id="hin" class="inp" value="HOME"><span class="small">AWAY</span><input id="ain" class="inp" value="AWAY"></div>
+    <div class="row"><button class="btn b3" data-a="names">チーム名反映</button><button class="btn" data-a="clearLogo">画像クリア</button></div>
+    <div class="row"><span class="small">HOME画像</span><input id="hfile" class="file" type="file" accept="image/*"></div>
+    <div class="row"><span class="small">AWAY画像</span><input id="afile" class="file" type="file" accept="image/*"></div>
   </div>
 </div>
 <script>
-(function(){
-'use strict';
-const $=id=>document.getElementById(id), KEY='soccer_overlay_hybrid_pro_v1';
-const st={running:false,startPerf:0,baseMs:0,phase:'前半',home:0,away:0,homeName:'HOME',awayName:'AWAY',homeLogo:'',awayLogo:'',x:null,y:8,scale:1,at:0,atShow:false,logos:true,lastSave:0};
-const ids=['clock','phase','at','homeScore','awayScore','homeName','awayName','homeLogo','awayLogo','overlay','panel1','panel2']; ids.forEach(i=>window[i]=$(i));
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');Object.assign(st,s);if(st.running&&st.savedWall){st.baseMs+=(Date.now()-st.savedWall);st.startPerf=performance.now();}}catch(e){}}
-function save(force){const now=Date.now(); if(!force&&now-st.lastSave<600)return; st.lastSave=now; const data=Object.assign({},st,{savedWall:Date.now()}); localStorage.setItem(KEY,JSON.stringify(data));}
-function ms(){return st.running?st.baseMs+(performance.now()-st.startPerf):st.baseMs;}
-function fmt(v){const s=Math.max(0,Math.floor(v/1000));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor((s%3600)/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
-function render(){clock.textContent=fmt(ms());phase.textContent=st.phase;homeScore.textContent=st.home;awayScore.textContent=st.away;homeName.textContent=st.homeName;awayName.textContent=st.awayName;at.textContent='AT +'+st.at;at.style.display=st.atShow?'inline-block':'none';homeLogo.src=st.homeLogo||svgLogo('H','#0b63ff');awayLogo.src=st.awayLogo||svgLogo('A','#4212a8');homeLogo.style.display=awayLogo.style.display=st.logos?'block':'none';overlay.style.setProperty('--scale',st.scale); if(st.x!==null){overlay.style.left=st.x+'px';overlay.style.top=st.y+'px';overlay.style.transform='scale(var(--scale,1))';overlay.style.transformOrigin='top left';}}
-function loop(){render(); if(st.running) save(false); setTimeout(loop,250);} // 表示更新は軽量化のため4fps。時間計算自体はperformance.now基準。
-function svgLogo(t,c){return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="30" fill="'+c+'"/><text x="32" y="41" text-anchor="middle" font-family="Arial" font-size="28" font-weight="900" fill="white">'+t+'</text></svg>');}
-function start(){if(!st.running){st.startPerf=performance.now();st.running=true;save(true);}}
-function stop(){if(st.running){st.baseMs=ms();st.running=false;save(true);}}
-function reset(){st.running=false;st.baseMs=0;save(true);}
-function setPhase(p){st.phase=p;if(p==='前半'||p==='後半'){st.baseMs=0;st.running=false;} if(p==='PK'){st.atShow=false;} save(true);}
-function score(side,d){st[side]=Math.max(0,st[side]+d);overlay.classList.remove('goalFlash');void overlay.offsetWidth;overlay.classList.add('goalFlash');save(true);}
-function fileToLogo(input,prop){const f=input.files&&input.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{st[prop]=e.target.result;save(true);render();}; r.readAsDataURL(f);}
-load();render();loop();
-$('startBtn').onclick=start;$('stopBtn').onclick=stop;$('resetBtn').onclick=reset;$('firstBtn').onclick=()=>setPhase('前半');$('secondBtn').onclick=()=>setPhase('後半');$('pkBtn').onclick=()=>setPhase('PK');
-$('homePlus').onclick=()=>score('home',1);$('homeMinus').onclick=()=>score('home',-1);$('awayPlus').onclick=()=>score('away',1);$('awayMinus').onclick=()=>score('away',-1);
-$('atPlus').onclick=()=>{st.at=Math.min(30,st.at+1);st.atShow=true;save(true);};$('atMinus').onclick=()=>{st.at=Math.max(0,st.at-1);save(true);};$('atToggle').onclick=()=>{st.atShow=!st.atShow;save(true);};$('saveBtn').onclick=()=>save(true);
-$('clearBtn').onclick=()=>{localStorage.removeItem(KEY);location.reload();};
-$('applyNames').onclick=()=>{st.homeName=$('homeInput').value.trim()||'HOME';st.awayName=$('awayInput').value.trim()||'AWAY';save(true);};
-$('homeFile').onchange=e=>fileToLogo(e.target,'homeLogo');$('awayFile').onchange=e=>fileToLogo(e.target,'awayLogo');$('hideLogos').onclick=()=>{st.logos=!st.logos;save(true);};$('resetPos').onclick=()=>{st.x=null;st.y=8;st.scale=1;overlay.style.left='50%';overlay.style.top='8px';overlay.style.transform='translateX(-50%) scale(var(--scale,1))';overlay.style.transformOrigin='top center';save(true);};$('scaleMinus').onclick=()=>{st.scale=Math.max(.55,st.scale-.05);save(true);};$('scalePlus').onclick=()=>{st.scale=Math.min(1.8,st.scale+.05);save(true);};
-let tapTimer=0,taps=0,drag=false,startX=0,startY=0,baseX=0,baseY=0,moved=false,pointers=new Map(),pinchDist=0,pinchScale=1;
-overlay.addEventListener('pointerdown',e=>{overlay.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=false;if(pointers.size===1){drag=true;startX=e.clientX;startY=e.clientY;const rect=overlay.getBoundingClientRect();baseX=st.x===null?rect.left:st.x;baseY=st.y;}else if(pointers.size===2){const a=[...pointers.values()];pinchDist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);pinchScale=st.scale;drag=false;}});
-overlay.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===2){const a=[...pointers.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinchDist>0){st.scale=Math.max(.55,Math.min(1.8,pinchScale*(d/pinchDist)));moved=true;save(false);}}else if(drag){const dx=e.clientX-startX,dy=e.clientY-startY;if(Math.abs(dx)+Math.abs(dy)>5)moved=true;st.x=baseX+dx;st.y=Math.max(0,baseY+dy);save(false);}});
-function endPointer(e){pointers.delete(e.pointerId);drag=false;if(!moved){taps++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>{if(taps===1){panel1.classList.toggle('show');panel2.classList.remove('show');}else{panel2.classList.toggle('show');panel1.classList.remove('show');}taps=0;},260);}else save(true);} overlay.addEventListener('pointerup',endPointer);overlay.addEventListener('pointercancel',endPointer);
+(()=>{"use strict";
+const $=id=>document.getElementById(id),plate=$('plate'),p1=$('p1'),p2=$('p2'),clock=$('clock'),phase=$('phase'),atEl=$('at'),hs=$('hs'),as=$('as'),hn=$('hn'),an=$('an'),hl=$('hl'),al=$('al'),hin=$('hin'),ain=$('ain');
+const K='soccerOverlayLiteV2';let run=0,base=0,elapsed=0,lastSec=-1,scoreH=0,scoreA=0,at=0,scale=1,pos={x:null,y:8},drag=0,moved=0,sx=0,sy=0,px=0,py=0,lastTap=0,tapTimer=0,pinch=0,pd=new Map();
+function pad(n){return n<10?'0'+n:''+n}function renderTime(ms){let s=Math.floor(ms/1000);if(s===lastSec)return;lastSec=s;clock.textContent=pad((s/3600)|0)+':'+pad(((s%3600)/60)|0)+':'+pad(s%60)}
+function loop(){if(run)renderTime(elapsed+performance.now()-base);setTimeout(loop,250)}
+function save(){try{localStorage.setItem(K,JSON.stringify({elapsed:run?elapsed+performance.now()-base:elapsed,run:run,t:Date.now(),h:scoreH,a:scoreA,ph:phase.textContent,at:at,hn:hn.textContent,an:an.textContent,scale:scale,pos:pos,hl:hl.src||'',al:al.src||''}))}catch(e){}}
+function load(){try{let s=JSON.parse(localStorage.getItem(K)||'{}');elapsed=+s.elapsed||0;if(s.run){elapsed+=Date.now()-(+s.t||Date.now());run=1;base=performance.now()}scoreH=+s.h||0;scoreA=+s.a||0;hs.textContent=scoreH;as.textContent=scoreA;phase.textContent=s.ph||'前半';at=+s.at||0;setAT();hn.textContent=s.hn||'HOME';an.textContent=s.an||'AWAY';hin.value=hn.textContent;ain.value=an.textContent;scale=Math.min(1.8,Math.max(.55,+s.scale||1));document.documentElement.style.setProperty('--s',scale);if(s.pos&&s.pos.x!==null){pos=s.pos;plate.style.left=pos.x+'px';plate.style.top=pos.y+'px';plate.style.transform='scale(var(--s))'}if(s.hl)hl.src=s.hl;if(s.al)al.src=s.al;if(phase.textContent==='PK')document.body.classList.add('pkmode')}catch(e){}}
+function setAT(){atEl.textContent='+'+at;atEl.style.display=at>0?'inline-block':'none'}
+function start(){if(!run){base=performance.now();run=1;save()}}function stop(){if(run){elapsed+=performance.now()-base;run=0;save()}}function reset(){run=0;elapsed=0;lastSec=-1;renderTime(0);save()}function score(which,d){if(which==='h'){scoreH=Math.max(0,scoreH+d);hs.textContent=scoreH}else{scoreA=Math.max(0,scoreA+d);as.textContent=scoreA}plate.classList.remove('goal');void plate.offsetWidth;plate.classList.add('goal');save()}
+function setPhase(v){phase.textContent=v;document.body.classList.toggle('pkmode',v==='PK');save()}function toggle(el){el.classList.toggle('show')}function hidePanels(){p1.classList.remove('show');p2.classList.remove('show')}
+function action(a){if(a==='start')start();else if(a==='stop')stop();else if(a==='reset')reset();else if(a==='first')setPhase('前半');else if(a==='second')setPhase('後半');else if(a==='pk')setPhase('PK');else if(a==='hplus')score('h',1);else if(a==='hminus')score('h',-1);else if(a==='aplus')score('a',1);else if(a==='aminus')score('a',-1);else if(a==='atplus'){at++;setAT();save()}else if(a==='atminus'){at=Math.max(0,at-1);setAT();save()}else if(a==='save')save();else if(a==='names'){hn.textContent=(hin.value||'HOME').slice(0,12);an.textContent=(ain.value||'AWAY').slice(0,12);save()}else if(a==='clearLogo'){hl.removeAttribute('src');al.removeAttribute('src');save()}}
+document.addEventListener('click',e=>{let b=e.target.closest('button[data-a]');if(b){e.preventDefault();action(b.dataset.a)}},true);
+function file(input,img){let f=input.files&&input.files[0];if(!f)return;if(f.size>300000){alert('画像が大きすぎます。300KB以下を推奨します。');return}let r=new FileReader();r.onload=()=>{img.src=r.result;save()};r.readAsDataURL(f)}$('hfile').addEventListener('change',()=>file($('hfile'),hl));$('afile').addEventListener('change',()=>file($('afile'),al));
+function dist(){let a=[...pd.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}let startD=0,startScale=1;
+plate.addEventListener('pointerdown',e=>{pd.set(e.pointerId,{x:e.clientX,y:e.clientY});plate.setPointerCapture(e.pointerId);if(pd.size===2){pinch=1;startD=dist();startScale=scale;drag=0;return}drag=1;moved=0;sx=px=e.clientX;sy=py=e.clientY}, {passive:false});
+plate.addEventListener('pointermove',e=>{if(!pd.has(e.pointerId))return;pd.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch&&pd.size===2){let d=dist();scale=Math.min(1.8,Math.max(.55,startScale*d/startD));document.documentElement.style.setProperty('--s',scale);return}if(!drag)return;let dx=e.clientX-px,dy=e.clientY-py;if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6)moved=1;px=e.clientX;py=e.clientY;if(moved){let r=plate.getBoundingClientRect();if(pos.x===null){pos.x=r.left+r.width/2;pos.y=r.top}pos.x+=dx;pos.y+=dy;plate.style.left=pos.x+'px';plate.style.top=pos.y+'px';plate.style.transform='scale(var(--s))'}}, {passive:false});
+function up(e){pd.delete(e.pointerId);if(pinch&&pd.size<2){pinch=0;save();return}if(!drag)return;drag=0;if(moved){save();return}let now=Date.now();if(now-lastTap<280){clearTimeout(tapTimer);lastTap=0;p1.classList.remove('show');toggle(p2)}else{lastTap=now;tapTimer=setTimeout(()=>{p2.classList.remove('show');toggle(p1);lastTap=0},300)}}
+plate.addEventListener('pointerup',up,{passive:false});plate.addEventListener('pointercancel',e=>{pd.delete(e.pointerId);drag=0;pinch=0},{passive:false});
+window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});load();renderTime(elapsed);loop();
 })();
 </script>
 </body>

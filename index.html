@@ -3,58 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Soccer Broadcast Overlay Hybrid Pro Lite</title>
+<title>Soccer Broadcast Overlay Hybrid Pro Lite - Control Fixed</title>
 <style>
-:root{--s:1;--bg:rgba(10,12,18,.82);--edge:rgba(255,255,255,.86);--blue:#0867ff;--purple:#391098;--gold:#f2c94c;--txt:#fff}
+:root{--s:1;--bg:rgba(10,12,18,.84);--edge:rgba(255,255,255,.82);--blue:#0867ff;--purple:#391098;--gold:#f2c94c;--txt:#fff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:Arial,"Yu Gothic",sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
 #stage{position:fixed;inset:0;background:transparent;overflow:hidden}
-#plate{position:absolute;top:8px;left:50%;width:520px;height:40px;transform:translateX(-50%) scale(var(--s));transform-origin:top center;display:flex;align-items:center;color:var(--txt);border:1px solid var(--edge);border-radius:8px;background:var(--bg);overflow:hidden;will-change:transform,left,top;contain:layout paint style}
+#group{position:absolute;top:8px;left:50%;width:520px;transform:translateX(-50%) scale(var(--s));transform-origin:top center;will-change:transform,left,top;touch-action:none;contain:layout paint style}
+#plate{width:520px;height:40px;display:flex;align-items:center;color:var(--txt);border:1px solid var(--edge);border-radius:8px;background:var(--bg);overflow:hidden;touch-action:none}
 .t{height:100%;display:flex;align-items:center;background:rgba(0,0,0,.32);padding:0 7px;gap:5px;min-width:138px;max-width:138px}.ta{justify-content:flex-end}.logo{width:23px;height:23px;border-radius:50%;background:#20242f;object-fit:cover;border:1px solid rgba(255,255,255,.6);flex:0 0 auto}.name{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92px;text-shadow:0 1px 2px #000}.score{height:100%;min-width:64px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;letter-spacing:1px;background:linear-gradient(180deg,var(--blue),var(--purple));border-left:1px solid rgba(255,255,255,.4);border-right:1px solid rgba(255,255,255,.4)}
-.mid{height:100%;display:flex;align-items:center;justify-content:center;gap:5px;min-width:178px;background:rgba(0,0,0,.26)}#phase{font-size:13px;font-weight:900;color:#111;background:var(--gold);border-radius:4px;padding:3px 5px;min-width:34px;text-align:center}#clock{font-size:20px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums}.at{font-size:12px;font-weight:900;color:#fff;background:#d71920;border-radius:4px;padding:2px 4px;display:none}.pkmode .score{background:linear-gradient(180deg,#111,#444)}.goal{animation:g .45s linear 1}@keyframes g{50%{filter:brightness(1.8);transform:scale(1.04)}}
-.panel{position:absolute;left:50%;top:56px;transform:translateX(-50%);display:none;background:rgba(8,10,15,.94);border:1px solid rgba(255,255,255,.72);border-radius:10px;padding:9px;color:#fff;z-index:9;box-shadow:0 2px 8px rgba(0,0,0,.35);contain:layout paint style}.panel.show{display:block}.row{display:flex;gap:6px;margin:5px 0;justify-content:center;align-items:center}.btn{font-size:18px;font-weight:900;min-width:72px;min-height:42px;border:0;border-radius:8px;background:#f4f4f4;color:#111;padding:7px 8px}.btn:active{transform:scale(.96)}.b1{background:#12b76a;color:#fff}.b2{background:#ef4444;color:#fff}.b3{background:#2563eb;color:#fff}.b4{background:#f2c94c;color:#111}.inp{font-size:18px;min-height:42px;width:160px;border-radius:8px;border:0;padding:6px 8px}.file{font-size:16px;width:220px;background:#fff;color:#111;border-radius:8px;padding:8px}.small{font-size:14px;color:#ddd}.hide{display:none!important}
-@media(max-width:560px){#plate{width:500px}.t{min-width:132px;max-width:132px}.mid{min-width:172px}.name{max-width:86px}}
+.mid{height:100%;display:flex;align-items:center;justify-content:center;gap:5px;min-width:178px;background:rgba(0,0,0,.26)}#phase{font-size:13px;font-weight:900;color:#111;background:var(--gold);border-radius:4px;padding:3px 5px;min-width:34px;text-align:center}#clock{font-size:20px;font-weight:900;letter-spacing:.5px;font-variant-numeric:tabular-nums}.at{font-size:12px;font-weight:900;color:#fff;background:#d71920;border-radius:4px;padding:2px 4px;display:none}.pkmode .score{background:linear-gradient(180deg,#111,#444)}
+.panel{display:none;color:#fff;z-index:9;contain:layout paint style}.panel.show{display:block}
+#p1{margin-top:4px;width:520px;height:40px;border:1px solid rgba(255,255,255,.72);border-radius:8px;background:rgba(8,10,15,.94);overflow:hidden;padding:3px}
+#p1 .p1grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;width:100%;height:100%}
+.btn{border:0;border-radius:5px;background:#f4f4f4;color:#111;font-weight:900;font-size:10.5px;line-height:1;min-width:0;min-height:0;padding:0}.btn:active{opacity:.72}.b1{background:#12b76a;color:#fff}.b2{background:#ef4444;color:#fff}.b3{background:#2563eb;color:#fff}.b4{background:#f2c94c;color:#111}
+#p2{margin-top:6px;width:520px;border:1px solid rgba(255,255,255,.72);border-radius:10px;background:rgba(8,10,15,.96);padding:8px}.row{display:flex;gap:6px;margin:5px 0;justify-content:center;align-items:center}.inp{font-size:18px;min-height:44px;width:180px;border-radius:8px;border:0;padding:6px 8px}.file{font-size:16px;width:260px;background:#fff;color:#111;border-radius:8px;padding:8px}.label{font-size:14px;font-weight:900;color:#ddd;min-width:70px}.wide{font-size:17px;min-height:42px;min-width:132px;padding:8px}
+@media(max-width:560px){#group,#plate,#p1,#p2{width:500px}.t{min-width:132px;max-width:132px}.mid{min-width:172px}.name{max-width:86px}}
 </style>
 </head>
 <body>
 <div id="stage">
-  <div id="plate" aria-label="score overlay">
-    <div class="t"><img id="hl" class="logo" alt=""><span id="hn" class="name">HOME</span></div>
-    <div id="sc" class="score"><span id="hs">0</span><span>-</span><span id="as">0</span></div>
-    <div class="t ta"><span id="an" class="name">AWAY</span><img id="al" class="logo" alt=""></div>
-    <div class="mid"><span id="phase">前半</span><span id="clock">00:00:00</span><span id="at" class="at">+0</span></div>
-  </div>
-  <div id="p1" class="panel">
-    <div class="row"><button class="btn b1" data-a="start">スタート</button><button class="btn b2" data-a="stop">ストップ</button><button class="btn" data-a="reset">リセット</button></div>
-    <div class="row"><button class="btn b4" data-a="first">前半</button><button class="btn b4" data-a="second">後半</button><button class="btn b4" data-a="pk">PK</button></div>
-    <div class="row"><button class="btn b3" data-a="hplus">HOME +</button><button class="btn" data-a="hminus">HOME -</button><button class="btn b3" data-a="aplus">AWAY +</button><button class="btn" data-a="aminus">AWAY -</button></div>
-    <div class="row"><button class="btn" data-a="atminus">AT -</button><button class="btn b2" data-a="atplus">AT +</button><button class="btn" data-a="save">保存</button></div>
-  </div>
-  <div id="p2" class="panel">
-    <div class="row"><span class="small">HOME</span><input id="hin" class="inp" value="HOME"><span class="small">AWAY</span><input id="ain" class="inp" value="AWAY"></div>
-    <div class="row"><button class="btn b3" data-a="names">チーム名反映</button><button class="btn" data-a="clearLogo">画像クリア</button></div>
-    <div class="row"><span class="small">HOME画像</span><input id="hfile" class="file" type="file" accept="image/*"></div>
-    <div class="row"><span class="small">AWAY画像</span><input id="afile" class="file" type="file" accept="image/*"></div>
+  <div id="group">
+    <div id="plate" aria-label="score overlay">
+      <div class="t"><img id="hl" class="logo" alt=""><span id="hn" class="name">HOME</span></div>
+      <div id="sc" class="score"><span id="hs">0</span><span>-</span><span id="as">0</span></div>
+      <div class="t ta"><span id="an" class="name">AWAY</span><img id="al" class="logo" alt=""></div>
+      <div class="mid"><span id="phase">前半</span><span id="clock">00:00:00</span><span id="at" class="at">+0</span></div>
+    </div>
+    <div id="p1" class="panel" aria-label="control panel 1">
+      <div class="p1grid">
+        <button class="btn b1" data-a="start">スタート</button><button class="btn b2" data-a="stop">ストップ</button><button class="btn" data-a="reset">リセット</button><button class="btn b4" data-a="first">前半</button><button class="btn b4" data-a="second">後半</button><button class="btn b4" data-a="pk">PK</button><button class="btn b3" data-a="hplus">HOME+1</button><button class="btn" data-a="hminus">HOME-1</button><button class="btn b3" data-a="aplus">AWAY+1</button><button class="btn" data-a="aminus">AWAY-1</button>
+      </div>
+    </div>
+    <div id="p2" class="panel" aria-label="control panel 2">
+      <div class="row"><span class="label">HOME名</span><input id="hin" class="inp" value="HOME"><span class="label">AWAY名</span><input id="ain" class="inp" value="AWAY"></div>
+      <div class="row"><button class="btn b3 wide" data-a="names">チーム名反映</button><button class="btn wide" data-a="clearLogo">画像クリア</button></div>
+      <div class="row"><span class="label">HOME画像</span><input id="hfile" class="file" type="file" accept="image/*"></div>
+      <div class="row"><span class="label">AWAY画像</span><input id="afile" class="file" type="file" accept="image/*"></div>
+    </div>
   </div>
 </div>
 <script>
 (()=>{"use strict";
-const $=id=>document.getElementById(id),plate=$('plate'),p1=$('p1'),p2=$('p2'),clock=$('clock'),phase=$('phase'),atEl=$('at'),hs=$('hs'),as=$('as'),hn=$('hn'),an=$('an'),hl=$('hl'),al=$('al'),hin=$('hin'),ain=$('ain');
-const K='soccerOverlayLiteV2';let run=0,base=0,elapsed=0,lastSec=-1,scoreH=0,scoreA=0,at=0,scale=1,pos={x:null,y:8},drag=0,moved=0,sx=0,sy=0,px=0,py=0,lastTap=0,tapTimer=0,pinch=0,pd=new Map();
+const $=id=>document.getElementById(id),group=$('group'),plate=$('plate'),p1=$('p1'),p2=$('p2'),clock=$('clock'),phase=$('phase'),atEl=$('at'),hs=$('hs'),as=$('as'),hn=$('hn'),an=$('an'),hl=$('hl'),al=$('al'),hin=$('hin'),ain=$('ain');
+const K='soccerOverlayLiteV3control';let run=0,base=0,elapsed=0,lastSec=-1,scoreH=0,scoreA=0,at=0,scale=1,pos={x:null,y:8},drag=0,moved=0,sx=0,sy=0,px=0,py=0,lastTap=0,tapTimer=0,pinch=0,pd=new Map();
 function pad(n){return n<10?'0'+n:''+n}function renderTime(ms){let s=Math.floor(ms/1000);if(s===lastSec)return;lastSec=s;clock.textContent=pad((s/3600)|0)+':'+pad(((s%3600)/60)|0)+':'+pad(s%60)}
 function loop(){if(run)renderTime(elapsed+performance.now()-base);setTimeout(loop,250)}
 function save(){try{localStorage.setItem(K,JSON.stringify({elapsed:run?elapsed+performance.now()-base:elapsed,run:run,t:Date.now(),h:scoreH,a:scoreA,ph:phase.textContent,at:at,hn:hn.textContent,an:an.textContent,scale:scale,pos:pos,hl:hl.src||'',al:al.src||''}))}catch(e){}}
-function load(){try{let s=JSON.parse(localStorage.getItem(K)||'{}');elapsed=+s.elapsed||0;if(s.run){elapsed+=Date.now()-(+s.t||Date.now());run=1;base=performance.now()}scoreH=+s.h||0;scoreA=+s.a||0;hs.textContent=scoreH;as.textContent=scoreA;phase.textContent=s.ph||'前半';at=+s.at||0;setAT();hn.textContent=s.hn||'HOME';an.textContent=s.an||'AWAY';hin.value=hn.textContent;ain.value=an.textContent;scale=Math.min(1.8,Math.max(.55,+s.scale||1));document.documentElement.style.setProperty('--s',scale);if(s.pos&&s.pos.x!==null){pos=s.pos;plate.style.left=pos.x+'px';plate.style.top=pos.y+'px';plate.style.transform='scale(var(--s))'}if(s.hl)hl.src=s.hl;if(s.al)al.src=s.al;if(phase.textContent==='PK')document.body.classList.add('pkmode')}catch(e){}}
+function load(){try{let s=JSON.parse(localStorage.getItem(K)||'{}');elapsed=+s.elapsed||0;if(s.run){elapsed+=Date.now()-(+s.t||Date.now());run=1;base=performance.now()}scoreH=+s.h||0;scoreA=+s.a||0;hs.textContent=scoreH;as.textContent=scoreA;phase.textContent=s.ph||'前半';at=+s.at||0;setAT();hn.textContent=s.hn||'HOME';an.textContent=s.an||'AWAY';hin.value=hn.textContent;ain.value=an.textContent;scale=Math.min(1.8,Math.max(.55,+s.scale||1));document.documentElement.style.setProperty('--s',scale);if(s.pos&&s.pos.x!==null){pos=s.pos;group.style.left=pos.x+'px';group.style.top=pos.y+'px';group.style.transform='scale(var(--s))'}if(s.hl)hl.src=s.hl;if(s.al)al.src=s.al;if(phase.textContent==='PK')document.body.classList.add('pkmode')}catch(e){}}
 function setAT(){atEl.textContent='+'+at;atEl.style.display=at>0?'inline-block':'none'}
-function start(){if(!run){base=performance.now();run=1;save()}}function stop(){if(run){elapsed+=performance.now()-base;run=0;save()}}function reset(){run=0;elapsed=0;lastSec=-1;renderTime(0);save()}function score(which,d){if(which==='h'){scoreH=Math.max(0,scoreH+d);hs.textContent=scoreH}else{scoreA=Math.max(0,scoreA+d);as.textContent=scoreA}plate.classList.remove('goal');void plate.offsetWidth;plate.classList.add('goal');save()}
-function setPhase(v){phase.textContent=v;document.body.classList.toggle('pkmode',v==='PK');save()}function toggle(el){el.classList.toggle('show')}function hidePanels(){p1.classList.remove('show');p2.classList.remove('show')}
-function action(a){if(a==='start')start();else if(a==='stop')stop();else if(a==='reset')reset();else if(a==='first')setPhase('前半');else if(a==='second')setPhase('後半');else if(a==='pk')setPhase('PK');else if(a==='hplus')score('h',1);else if(a==='hminus')score('h',-1);else if(a==='aplus')score('a',1);else if(a==='aminus')score('a',-1);else if(a==='atplus'){at++;setAT();save()}else if(a==='atminus'){at=Math.max(0,at-1);setAT();save()}else if(a==='save')save();else if(a==='names'){hn.textContent=(hin.value||'HOME').slice(0,12);an.textContent=(ain.value||'AWAY').slice(0,12);save()}else if(a==='clearLogo'){hl.removeAttribute('src');al.removeAttribute('src');save()}}
-document.addEventListener('click',e=>{let b=e.target.closest('button[data-a]');if(b){e.preventDefault();action(b.dataset.a)}},true);
-function file(input,img){let f=input.files&&input.files[0];if(!f)return;if(f.size>300000){alert('画像が大きすぎます。300KB以下を推奨します。');return}let r=new FileReader();r.onload=()=>{img.src=r.result;save()};r.readAsDataURL(f)}$('hfile').addEventListener('change',()=>file($('hfile'),hl));$('afile').addEventListener('change',()=>file($('afile'),al));
+function start(){if(!run){base=performance.now();run=1;save()}}function stop(){if(run){elapsed+=performance.now()-base;run=0;save()}}function reset(){run=0;elapsed=0;lastSec=-1;renderTime(0);save()}function score(which,d){if(which==='h'){scoreH=Math.max(0,scoreH+d);hs.textContent=scoreH}else{scoreA=Math.max(0,scoreA+d);as.textContent=scoreA}save()}
+function setPhase(v){phase.textContent=v;document.body.classList.toggle('pkmode',v==='PK');save()}function toggleOnly(el){let show=!el.classList.contains('show');p1.classList.remove('show');p2.classList.remove('show');if(show)el.classList.add('show')}
+function action(a){if(a==='start')start();else if(a==='stop')stop();else if(a==='reset')reset();else if(a==='first')setPhase('前半');else if(a==='second')setPhase('後半');else if(a==='pk')setPhase('PK');else if(a==='hplus')score('h',1);else if(a==='hminus')score('h',-1);else if(a==='aplus')score('a',1);else if(a==='aminus')score('a',-1);else if(a==='names'){hn.textContent=(hin.value||'HOME').slice(0,12);an.textContent=(ain.value||'AWAY').slice(0,12);save()}else if(a==='clearLogo'){hl.removeAttribute('src');al.removeAttribute('src');save()}}
+document.addEventListener('pointerup',e=>{let b=e.target.closest('button[data-a]');if(b){e.preventDefault();e.stopPropagation();action(b.dataset.a)}},true);
+function file(input,img){let f=input.files&&input.files[0];if(!f)return;if(f.size>300000){alert('画像が大きすぎます。300KB以下を推奨します。');input.value='';return}let r=new FileReader();r.onload=()=>{img.src=r.result;save()};r.readAsDataURL(f)}$('hfile').addEventListener('change',()=>file($('hfile'),hl));$('afile').addEventListener('change',()=>file($('afile'),al));
 function dist(){let a=[...pd.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}let startD=0,startScale=1;
-plate.addEventListener('pointerdown',e=>{pd.set(e.pointerId,{x:e.clientX,y:e.clientY});plate.setPointerCapture(e.pointerId);if(pd.size===2){pinch=1;startD=dist();startScale=scale;drag=0;return}drag=1;moved=0;sx=px=e.clientX;sy=py=e.clientY}, {passive:false});
-plate.addEventListener('pointermove',e=>{if(!pd.has(e.pointerId))return;pd.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch&&pd.size===2){let d=dist();scale=Math.min(1.8,Math.max(.55,startScale*d/startD));document.documentElement.style.setProperty('--s',scale);return}if(!drag)return;let dx=e.clientX-px,dy=e.clientY-py;if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6)moved=1;px=e.clientX;py=e.clientY;if(moved){let r=plate.getBoundingClientRect();if(pos.x===null){pos.x=r.left+r.width/2;pos.y=r.top}pos.x+=dx;pos.y+=dy;plate.style.left=pos.x+'px';plate.style.top=pos.y+'px';plate.style.transform='scale(var(--s))'}}, {passive:false});
-function up(e){pd.delete(e.pointerId);if(pinch&&pd.size<2){pinch=0;save();return}if(!drag)return;drag=0;if(moved){save();return}let now=Date.now();if(now-lastTap<280){clearTimeout(tapTimer);lastTap=0;p1.classList.remove('show');toggle(p2)}else{lastTap=now;tapTimer=setTimeout(()=>{p2.classList.remove('show');toggle(p1);lastTap=0},300)}}
+plate.addEventListener('pointerdown',e=>{e.preventDefault();pd.set(e.pointerId,{x:e.clientX,y:e.clientY});try{plate.setPointerCapture(e.pointerId)}catch(_){ }if(pd.size===2){pinch=1;startD=dist();startScale=scale;drag=0;return}drag=1;moved=0;sx=px=e.clientX;sy=py=e.clientY},{passive:false});
+plate.addEventListener('pointermove',e=>{if(!pd.has(e.pointerId))return;e.preventDefault();pd.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pinch&&pd.size===2){let d=dist();scale=Math.min(1.8,Math.max(.55,startScale*d/startD));document.documentElement.style.setProperty('--s',scale);return}if(!drag)return;let dx=e.clientX-px,dy=e.clientY-py;if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>7)moved=1;px=e.clientX;py=e.clientY;if(moved){let r=group.getBoundingClientRect();if(pos.x===null){pos.x=r.left+r.width/2;pos.y=r.top}pos.x+=dx;pos.y+=dy;group.style.left=pos.x+'px';group.style.top=pos.y+'px';group.style.transform='scale(var(--s))'}},{passive:false});
+function up(e){if(pd.has(e.pointerId))pd.delete(e.pointerId);if(pinch&&pd.size<2){pinch=0;save();return}if(!drag)return;drag=0;if(moved){save();return}let now=Date.now();if(now-lastTap<280){clearTimeout(tapTimer);lastTap=0;toggleOnly(p2)}else{lastTap=now;tapTimer=setTimeout(()=>{toggleOnly(p1);lastTap=0},300)}}
 plate.addEventListener('pointerup',up,{passive:false});plate.addEventListener('pointercancel',e=>{pd.delete(e.pointerId);drag=0;pinch=0},{passive:false});
 window.addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});load();renderTime(elapsed);loop();
 })();
